@@ -48,7 +48,7 @@ https://7doko.github.io/andromeda/
 
 _Add your official loader/instructions here only if you intend to publish them publicly._
 
-## suggest a Game
+## suggest a game
 
 want support for another game? join the Discord and send a suggestion.
 
