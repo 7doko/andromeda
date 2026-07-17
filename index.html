@@ -1,4 +1,113 @@
-<section id="games">
-  <h2>Supported Games</h2>
-  <div id="game-list" class="game-list"></div>
-</section>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Andromeda is a Roblox utility hub with visual, player, server, and game-specific features.">
+  <title>Andromeda Hub</title>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <header class="navbar">
+    <a class="logo" href="#">ANDROMEDA</a>
+
+    <nav>
+      <a href="#games">Games</a>
+      <a href="#features">Features</a>
+      <a href="#changelog">Changelog</a>
+      <a class="discord-link" href="https://dsc.gg/andromedahub" target="_blank" rel="noopener">
+        Discord
+      </a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">ROBLOX UTILITY HUB</p>
+      <h1>Andromeda</h1>
+      <p class="hero-description">
+        Visual, player, server, and game-specific features for supported Roblox experiences.
+      </p>
+
+      <div class="hero-actions">
+        <a class="button primary" href="#games">View supported games</a>
+        <a class="button secondary" href="https://dsc.gg/andromedahub" target="_blank" rel="noopener">
+          Join Discord
+        </a>
+      </div>
+    </section>
+
+    <section id="games" class="section">
+      <div class="section-heading">
+        <p class="eyebrow">COMPATIBILITY</p>
+        <h2>Supported Games</h2>
+        <p>Games marked Planned are on the support roadmap.</p>
+      </div>
+
+      <div id="game-list" class="game-list"></div>
+    </section>
+
+    <section id="features" class="section">
+      <div class="section-heading">
+        <p class="eyebrow">HUB FEATURES</p>
+        <h2>What Andromeda includes</h2>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h3>Visual</h3>
+          <p>ESP options, crosshair controls, fog removal, and performance stats.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Player</h3>
+          <p>Movement and character utilities, with adjustable controls.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Server</h3>
+          <p>Player selection, teleporting, spectating, server hopping, and Anti AFK.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Game-specific</h3>
+          <p>Dedicated controls that are tailored to each supported experience.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="changelog" class="section">
+      <div class="section-heading">
+        <p class="eyebrow">LATEST UPDATE</p>
+        <h2>Changelog</h2>
+      </div>
+
+      <article class="changelog-card">
+        <span>Current version</span>
+        <h3>Andromeda Hub</h3>
+        <ul>
+          <li>Added Prison Life support.</li>
+          <li>Added supported-games list in the hub.</li>
+          <li>Added server Anti AFK and performance stats.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="discord-section">
+      <h2>Want to suggest a game?</h2>
+      <p>Join the Andromeda Discord and share your feature or game-support request.</p>
+      <a class="button primary" href="https://dsc.gg/andromedahub" target="_blank" rel="noopener">
+        Join the Discord
+      </a>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 Andromeda Hub. Not affiliated with Roblox Corporation.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
