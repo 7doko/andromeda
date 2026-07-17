@@ -1,0 +1,30 @@
+.game-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.game-card {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  color: white;
+  text-decoration: none;
+  background: #202026;
+  border: 1px solid #333340;
+  border-radius: 12px;
+}
+
+.game-card img {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+}
+
+.game-card h3,
+.game-card p {
+  margin: 0 0 5px;
+}
+
+.supported { color: #78e08f; }
+.planned { color: #f6c453; }
