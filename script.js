@@ -16,14 +16,59 @@ const supportedGames = [
 
 const gameList = document.querySelector("#game-list");
 
+function createFallbackIcon(name) {
+  const initial = name.charAt(0).toUpperCase();
+
+  return `
+    data:image/svg+xml,
+    <svg xmlns="http://www.w3.org/2000/svg" width="112" height="112">
+      <rect width="100%" height="100%" rx="16" fill="%23202026"/>
+      <text
+        x="50%"
+        y="54%"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill="%23785aff"
+        font-family="Arial"
+        font-size="54"
+        font-weight="bold">
+        ${initial}
+      </text>
+    </svg>
+  `.replace(/\n|\s{2,}/g, "");
+}
+
+function updateGameIcon(image, game) {
+  const thumbnailUrl =
+    `https://thumbnails.roblox.com/v1/places/gameicons?placeIds=${game.placeId}&size=150x150&format=Png&isCircular=false`;
+
+  fetch(thumbnailUrl)
+    .then(response => response.json())
+    .then(data => {
+      const iconUrl = data?.data?.[0]?.imageUrl;
+
+      if (iconUrl) {
+        image.src = iconUrl;
+      }
+    })
+    .catch(() => {
+      // The clean fallback icon stays visible if Roblox's thumbnail request fails.
+    });
+}
+
 gameList.innerHTML = supportedGames.map(game => `
-  <a class="game-card"
-     href="https://www.roblox.com/games/${game.placeId}"
-     target="_blank"
-     rel="noopener">
+  <a
+    class="game-card"
+    href="https://www.roblox.com/games/${game.placeId}"
+    target="_blank"
+    rel="noopener"
+  >
     <img
-      src="https://www.roblox.com/asset-thumbnail/image?assetId=${game.placeId}&width=150&height=150&format=png"
-      alt="${game.name} icon">
+      class="game-icon"
+      src="${createFallbackIcon(game.name)}"
+      alt="${game.name} icon"
+    >
+
     <div>
       <h3>${game.name}</h3>
       <p>Place ID: ${game.placeId}</p>
@@ -31,3 +76,7 @@ gameList.innerHTML = supportedGames.map(game => `
     </div>
   </a>
 `).join("");
+
+document.querySelectorAll(".game-icon").forEach((image, index) => {
+  updateGameIcon(image, supportedGames[index]);
+});
