@@ -1,31 +1,28 @@
-# Andromeda
+# andromeda
 
-Andromeda is a Roblox utility hub with visual, player, server, and game-specific features for supported experiences.
+andromeda is a Roblox utility hub with visual, player, server, and game-specific features for supported experiences.
 
-> Not affiliated with Roblox Corporation.
+> not affiliated with Roblox Corporation.
 
-## Preview
+## preview
 
 _Add screenshots or a short GIF here._
 
-## Features
+## features
 
-### Universal
+### universal
 
-- Player utilities
-- Visual ESP controls
-- Crosshair and fog-removal options
-- Performance stats
-- Server hopping and rejoining
-- Player teleport, spectate, and head sit
-- Anti AFK
-- Customizable menu keybind
+- player utilities
+- visual esp controls
+- crosshair and fog-removal options
+- performance stats
+- server hopping and rejoining
 
-### Game-specific
+### game-specific
 
-Andromeda includes dedicated features for supported games, including aim assistance, hitbox controls, automation, and game-specific utilities.
+andromeda includes dedicated features for supported games, including aim assist, hitbox controls, automation, and game-specific utilities.
 
-## Supported Games
+## supported Games
 
 - Arsenal
 - Sniper Arena
@@ -37,36 +34,33 @@ Andromeda includes dedicated features for supported games, including aim assista
 - Bloxstrike
 - Da Hood
 - Prison Life
-
-### Planned Support
-
 - Build A Boat For Treasure
 - Doors
 - Grow a Garden 2
 
-## Website
+## website
 
-View the supported-games list and latest updates:
+view the supported-games list and latest updates:
 
 https://7doko.github.io/andromeda/
 
-## Installation
+## installation
 
 _Add your official loader/instructions here only if you intend to publish them publicly._
 
-## Suggest a Game
+## suggest a Game
 
-Want support for another game? Join the Discord and send a suggestion.
+want support for another game? join the Discord and send a suggestion.
 
-## Discord
+## discord
 
 https://dsc.gg/andromedahub
 
-## Changelog
+## changelog
 
-### Latest
+### latest
 
-- Added Prison Life support
-- Added supported-games page
-- Added server Anti AFK
-- Added performance stats
+- added Prison Life support
+- added supported-games page
+- added server anti afk
+- added performance stats
