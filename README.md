@@ -38,7 +38,7 @@ andromeda includes dedicated features for supported games, including aim assist,
 
 ## website
 
-view the supported-games list and latest updates:
+view the website
 
 https://7doko.github.io/andromeda/
 
