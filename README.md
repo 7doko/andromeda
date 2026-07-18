@@ -24,19 +24,18 @@ andromeda includes dedicated features for supported games, including aim assist,
 
 ## supported games
 
+- Grow a Garden 2
 - Arsenal
-- Sniper Arena
-- One Tap
 - Murder Mystery 2
 - Natural Disaster Survival
-- RIVALS
 - Blade Ball
-- Bloxstrike
+- BloxStrike
 - Da Hood
 - Prison Life
 - Build A Boat For Treasure
 - Doors
-- Grow a Garden 2
+- Sniper Arena
+- One Tap
 
 ## website
 
