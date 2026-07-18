@@ -33,7 +33,7 @@ andromeda includes dedicated features for supported games, including aim assist,
 - Da Hood
 - Prison Life
 - Build A Boat For Treasure
-- Doors
+- Strucid
 - Sniper Arena
 - One Tap
 
