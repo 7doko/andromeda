@@ -166,20 +166,6 @@ footer p {
   margin: 0;
 }
 
-.status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.status i {
-  width: 5px;
-  height: 5px;
-  background: var(--violet);
-  border-radius: 50%;
-  box-shadow: 0 0 8px rgba(155, 114, 255, 0.8);
-}
-
 @keyframes arrive {
   from {
     opacity: 0;
@@ -204,9 +190,6 @@ footer p {
     text-align: center;
   }
 
-  .status {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
