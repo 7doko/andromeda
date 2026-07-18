@@ -22,7 +22,7 @@ _Add screenshots or a short GIF here._
 
 andromeda includes dedicated features for supported games, including aim assist, hitbox controls, automation, and game-specific utilities.
 
-## supported Games
+## supported games
 
 - Arsenal
 - Sniper Arena
