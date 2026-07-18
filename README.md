@@ -8,6 +8,10 @@ andromeda is a Roblox utility hub with visual, player, server, and game-specific
 
 _Add screenshots or a short GIF here._
 
+## installation
+
+_Add your official loader/instructions here only if you intend to publish them publicly._
+
 ## features
 
 ### universal
@@ -41,10 +45,6 @@ andromeda includes dedicated features for supported games, including aim assist,
 view the website
 
 https://7doko.github.io/andromeda/
-
-## installation
-
-_Add your official loader/instructions here only if you intend to publish them publicly._
 
 ## suggest a game
 
