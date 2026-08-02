@@ -503,6 +503,8 @@ function Andromeda:CreateWindow(config)
 			local knob=make("Frame",{Size=UDim2.fromOffset(16,16),Position=value and UDim2.fromOffset(24,2) or UDim2.fromOffset(2,2),
 				BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Parent=switch})
 			round(knob,20)
+			local switchHit=make("TextButton",{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,
+				BorderSizePixel=0,Text="",AutoButtonColor=false,ZIndex=2,Parent=switch})
 			local control={}
 			function control:Set(nextValue,silent)
 				value=nextValue==true
@@ -519,6 +521,7 @@ function Andromeda:CreateWindow(config)
 			control.ClearKey=function() bind:ClearKey() end
 			local hit=make("TextButton",{Size=UDim2.new(1,-55,1,0),BackgroundTransparency=1,Text="",Parent=object})
 			table.insert(connections,hit.MouseButton1Click:Connect(toggle))
+			table.insert(connections,switchHit.MouseButton1Click:Connect(toggle))
 			if options.Flag then Andromeda.Flags[options.Flag]=value end
 			attachTooltip(object,options.Description or options.Tooltip)
 			return control
