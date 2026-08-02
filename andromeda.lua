@@ -1,6 +1,4 @@
 -- andromedaLib
--- UI-only hub framework. No game IDs, detection, or gameplay features.
--- require(ModuleScript) or host this source and loadstring(... )().
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
