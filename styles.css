@@ -111,8 +111,8 @@ h1 {
 
 .actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  width: min(100%, 700px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 460px);
   gap: 16px;
   margin: 0 auto;
 }
