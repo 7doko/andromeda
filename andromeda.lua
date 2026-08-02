@@ -647,7 +647,8 @@ function Andromeda:CreateWindow(config)
 				BackgroundTransparency=1,Image="rbxassetid://116302930717338",
 				ImageColor3=theme.Text,ZIndex=6,Parent=object}),"Text","ImageColor3")
 			local holder=role(make("ScrollingFrame",{Size=UDim2.new(1,-20,0,0),Position=UDim2.fromOffset(10,48),
-				BackgroundColor3=theme.Panel,BorderSizePixel=0,ScrollBarThickness=3,CanvasSize=UDim2.new(),
+				BackgroundColor3=theme.Panel,BorderSizePixel=0,ScrollBarThickness=3,
+				ScrollBarImageColor3=theme.Accent,CanvasSize=UDim2.new(),
 				Visible=false,ZIndex=10,Parent=object}),"Panel")
 			round(holder,8)
 			local layout=make("UIListLayout",{Padding=UDim.new(0,4),Parent=holder})
