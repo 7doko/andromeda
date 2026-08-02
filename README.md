@@ -167,7 +167,7 @@ The value is clamped between `0.5` and `1.5`.
 
 ### Watermark
 
-Every Andromeda window includes a permanent `andromeda • v1.0.2` watermark. It remains visible when the main window is hidden and has no configuration or visibility controls.
+Every Andromeda window includes a permanent `made with andromedaLib | @7doko` watermark. It remains visible when the main window is hidden and has no configuration or visibility controls.
 
 ### SetTheme
 

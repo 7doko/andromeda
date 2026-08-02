@@ -172,7 +172,7 @@ function Andromeda:CreateWindow(config)
 	round(watermarkDot,6)
 	local watermarkLabel = textRole(text(
 		watermark,
-		"andromeda  •  v"..Andromeda.Version,
+		"made with andromedaLib | @7doko",
 		UDim2.fromOffset(0,32),
 		theme.Text
 	), "Text")
