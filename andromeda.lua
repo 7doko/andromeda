@@ -141,7 +141,6 @@ function Andromeda:CreateWindow(config)
 	local savedMouseBehavior, savedMouseIconEnabled
 	local settings = {
 		Notifications = true, NotificationScale = 1, Tooltips = true, Muted = false,
-		Watermark = config.Watermark ~= false,
 	}
 	local guiName = config.GuiName or "andromedaLib"
 	local old = player.PlayerGui:FindFirstChild(guiName)
@@ -154,9 +153,9 @@ function Andromeda:CreateWindow(config)
 	})
 	local watermark = role(make("Frame", {
 		Name = "Watermark", Size = UDim2.fromOffset(0,32), AutomaticSize = Enum.AutomaticSize.X,
-		Position = config.WatermarkPosition or UDim2.fromOffset(16,54),
+		Position = UDim2.fromOffset(16,54),
 		BackgroundColor3 = theme.Panel, BackgroundTransparency = .08, BorderSizePixel = 0,
-		Visible = settings.Watermark, ZIndex = 100, Parent = gui,
+		Visible = true, ZIndex = 100, Parent = gui,
 	}), "Panel")
 	round(watermark,9)
 	role(make("UIStroke", {Color = theme.Stroke, Transparency = .25, Parent = watermark}), "Stroke", "Color")
@@ -173,7 +172,7 @@ function Andromeda:CreateWindow(config)
 	round(watermarkDot,6)
 	local watermarkLabel = textRole(text(
 		watermark,
-		config.WatermarkText or ("andromeda  •  v"..Andromeda.Version),
+		"andromeda  •  v"..Andromeda.Version,
 		UDim2.fromOffset(0,32),
 		theme.Text
 	), "Text")
@@ -274,7 +273,6 @@ function Andromeda:CreateWindow(config)
 	local window = {
 		Gui = gui, Main = root, Theme = theme, Tabs = tabs, Connections = connections,
 		Keybinds = keybinds, Visible = false, Settings = settings,
-		Watermark = watermark, WatermarkLabel = watermarkLabel,
 	}
 
 	local function play(sound)
@@ -368,13 +366,6 @@ function Andromeda:CreateWindow(config)
 	end
 	function window:Toggle() self:SetVisible(not self.Visible) end
 	function window:SetScale(value) uiScale.Scale = math.clamp(tonumber(value) or 1, .5, 1.5) end
-	function window:SetWatermarkVisible(value)
-		settings.Watermark = value == true
-		watermark.Visible = settings.Watermark
-	end
-	function window:SetWatermarkText(value)
-		watermarkLabel.Text = tostring(value or "")
-	end
 	function window:SetTheme(nextTheme)
 		if type(nextTheme) == "string" then
 			theme = merge(Andromeda.Themes[nextTheme] or Andromeda.Themes.andromeda)
@@ -769,9 +760,9 @@ function Andromeda:CreateWindow(config)
 		tabConfig=type(tabConfig)=="table" and tabConfig or {Name=tostring(tabConfig or "Tab"),Icon=icon}
 		local tab={Name=tabConfig.Name or "Tab",Internal=tabConfig.Internal==true}
 		local button=textRole(role(make("TextButton",{Size=UDim2.new(1,0,0,38),BackgroundColor3=theme.Element,
-			BackgroundTransparency=1,BorderSizePixel=0,AutoButtonColor=false,Text=tab.Name,
-			TextColor3=theme.Muted,TextSize=16,TextXAlignment=Enum.TextXAlignment.Center,
-			Font=Enum.Font.GothamBold,Parent=sidebar}),"Element"),"Muted")
+			BackgroundTransparency=0,BorderSizePixel=0,AutoButtonColor=false,Text=tab.Name,
+			TextColor3=theme.Text,TextSize=16,TextXAlignment=Enum.TextXAlignment.Center,
+			Font=Enum.Font.GothamBold,Parent=sidebar}),"Element"),"Text")
 		round(button,8);tab.Button=button
 		local page=make("ScrollingFrame",{Name=tab.Name,Size=UDim2.fromScale(1,1),BackgroundTransparency=1,
 			BorderSizePixel=0,ScrollBarThickness=3,ScrollBarImageColor3=theme.Accent,
@@ -809,6 +800,7 @@ function Andromeda:CreateWindow(config)
 		tab.AddSection=tab.CreateSection
 		table.insert(connections,button.MouseButton1Click:Connect(function() play(clickSound);select() end))
 		table.insert(connections,button.MouseEnter:Connect(function()
+			play(hoverSound)
 			if selectedTab~=tab then tween(button,{BackgroundColor3=theme.Accent},.15) end
 		end))
 		table.insert(connections,button.MouseLeave:Connect(function()
@@ -882,12 +874,6 @@ function Andromeda:CreateWindow(config)
 			Description="changes the scale of the full Andromeda window",
 			Callback=function(value) window:SetScale(value) end,
 		})
-		appearance:CreateToggle({
-			Name="Watermark",CurrentValue=settings.Watermark,
-			Description="shows or hides the Andromeda watermark",
-			Callback=function(enabled) window:SetWatermarkVisible(enabled) end,
-		})
-
 		local behavior=settingsTab:CreateSection("Behavior")
 		behavior:CreateToggle({
 			Name="Notifications",CurrentValue=true,

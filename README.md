@@ -37,7 +37,7 @@ The raw loader works in environments that provide `game:HttpGet` and `loadstring
 - Draggable window
 - Configurable menu keybind
 - Mouse cursor unlocking while the window is open
-- Built-in configurable watermark
+- Permanent built-in watermark
 
 ## Installation in Roblox Studio
 
@@ -106,9 +106,6 @@ local Window = Andromeda:CreateWindow({
 | `Size` | UDim2 | `UDim2.fromOffset(560, 360)` | Window size. |
 | `Position` | UDim2 | `UDim2.fromScale(0.5, 0.5)` | Initial window position. |
 | `Scale` | number | `1` | Initial UI scale. |
-| `Watermark` | boolean | `true` | Whether the built-in watermark is visible. |
-| `WatermarkText` | string | `andromeda • v1.0.2` | Text displayed inside the watermark. |
-| `WatermarkPosition` | UDim2 | `UDim2.fromOffset(16, 54)` | Initial screen position of the watermark. |
 | `ToggleKey` | Enum.KeyCode | `RightShift` | Key used by the built-in settings tab to show or hide the menu. |
 | `SettingsTab` | boolean | `true` | Whether the built-in settings tab is created. |
 | `SettingsTabName` | string | `Settings` | Name of the built-in settings tab. |
@@ -170,24 +167,7 @@ The value is clamped between `0.5` and `1.5`.
 
 ### Watermark
 
-The watermark is enabled by default and remains visible when the main window is hidden.
-
-```lua
-Window:SetWatermarkText("andromeda  •  private build")
-Window:SetWatermarkVisible(false)
-Window:SetWatermarkVisible(true)
-```
-
-Disable or customize it while creating the window:
-
-```lua
-local Window = Andromeda:CreateWindow({
-	Name = "My Hub",
-	Watermark = true,
-	WatermarkText = "my hub  •  v1.0",
-	WatermarkPosition = UDim2.fromOffset(16, 54),
-})
-```
+Every Andromeda window includes a permanent `andromeda • v1.0.2` watermark. It remains visible when the main window is hidden and has no configuration or visibility controls.
 
 ### SetTheme
 
@@ -674,7 +654,6 @@ Unless `SettingsTab = false`, every window receives the clean built-in Settings 
 - **Appearance**
   - Theme dropdown
   - Window scale slider
-  - Watermark toggle
 - **Behavior**
   - Notifications toggle
   - Notification scale slider
