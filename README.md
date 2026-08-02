@@ -4,24 +4,13 @@ Andromeda is a clean Roblox client UI library with tabs, sections, search, theme
 
 The library does not include game detection or gameplay features. You create the window and add your own controls through its API.
 
-## Latest version
+## Loadstring
 
 Load the newest version directly from GitHub:
 
 ```lua
 local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7doko/andromeda/main/andromeda.lua"))()
 ```
-
-Then create your interface normally:
-
-```lua
-local Window = Andromeda:CreateWindow({
-	Name = "My Hub",
-	Subtitle = "made with Andromeda",
-})
-```
-
-The raw loader works in environments that provide `game:HttpGet` and `loadstring`. For a normal Roblox Studio project, use the ModuleScript installation below.
 
 ## Features
 
@@ -39,24 +28,10 @@ The raw loader works in environments that provide `game:HttpGet` and `loadstring
 - Mouse cursor unlocking while the window is open
 - Permanent built-in watermark
 
-## Installation in Roblox Studio
-
-1. Put the `andromedaLib` ModuleScript inside `ReplicatedStorage`.
-2. Create a LocalScript inside `StarterPlayerScripts`.
-3. Require the module from the LocalScript.
-
-```lua
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Andromeda = require(ReplicatedStorage:WaitForChild("andromedaLib"))
-```
-
-Andromeda must be required from the client. Calling `CreateWindow()` from a server Script produces an error because `Players.LocalPlayer` only exists on the client.
-
 ## Quick start
 
 ```lua
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Andromeda = require(ReplicatedStorage:WaitForChild("andromedaLib"))
+local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7doko/andromeda/main/andromeda.lua"))()
 
 local Window = Andromeda:CreateWindow({
 	Name = "My Hub",
@@ -78,7 +53,7 @@ Features:CreateToggle({
 })
 ```
 
-Requiring the ModuleScript does not create a window. The interface is created when you call `Andromeda:CreateWindow()`.
+The loadstring returns the Andromeda API. The interface is created when you call `Andromeda:CreateWindow()`.
 
 ## Creating a window
 
@@ -717,8 +692,7 @@ Main:AddButton({
 ## Complete example
 
 ```lua
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Andromeda = require(ReplicatedStorage:WaitForChild("andromedaLib"))
+local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7doko/andromeda/main/andromeda.lua"))()
 
 local Window = Andromeda:CreateWindow({
 	Name = "Example Hub",
@@ -813,13 +787,9 @@ Controls:CreateKeybind({
 
 ## Troubleshooting
 
-### `andromedaLib must run on the client`
+### The loadstring ran but nothing appeared
 
-Require the module from a LocalScript, not from a server Script.
-
-### The module was required but nothing appeared
-
-Call `Andromeda:CreateWindow()`. Requiring the module by itself only returns the library table.
+Call `Andromeda:CreateWindow()`. Loading the source only returns the library API.
 
 ### A keybind will not clear
 
@@ -836,7 +806,3 @@ Check the Output window for an `[andromedaLib] callback error` warning.
 ### Values are not present in `Andromeda.Flags`
 
 Add a unique `Flag` option to the control.
-
-## Showcase
-
-The Roblox Studio place also includes `StarterPlayerScripts.AndromedaShowcase`, a complete LocalScript demonstrating every feature in a working interface.
