@@ -643,7 +643,7 @@ function Andromeda:CreateWindow(config)
 			name.Position=UDim2.fromOffset(15,0)
 			local valueLabel=textRole(text(object,"",UDim2.new(.5,-65,0,45),theme.Muted),"Muted")
 			valueLabel.Position=UDim2.new(.5,0,0,0);valueLabel.TextXAlignment=Enum.TextXAlignment.Right
-			local arrow=role(make("ImageLabel",{Size=UDim2.fromOffset(20,20),Position=UDim2.new(1,-30,.5,-10),
+			local arrow=role(make("ImageLabel",{Size=UDim2.fromOffset(20,20),Position=UDim2.new(1,-30,0,12),
 				BackgroundTransparency=1,Image="rbxassetid://116302930717338",
 				ImageColor3=theme.Text,ZIndex=6,Parent=object}),"Text","ImageColor3")
 			local holder=role(make("ScrollingFrame",{Size=UDim2.new(1,-20,0,0),Position=UDim2.fromOffset(10,48),
