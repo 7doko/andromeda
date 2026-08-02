@@ -523,7 +523,8 @@ function Andromeda:CreateWindow(config)
 			function control:Set(nextValue,silent)
 				value=math.clamp(tonumber(nextValue) or minimum,minimum,maximum)
 				value=math.floor(value/increment+.5)*increment
-				local ratio=(value-minimum)/math.max(maximum-minimum,1)
+				local span=maximum-minimum
+				local ratio=span~=0 and (value-minimum)/span or 0
 				name.Text=(options.Name or "Slider").."   "..format(value)
 				fill.Size=UDim2.fromScale(ratio,1); knob.Position=UDim2.new(ratio,0,.5,0)
 				reset.Visible=value~=default
@@ -921,4 +922,3 @@ function Andromeda:Destroy()
 end
 
 return Andromeda
-
