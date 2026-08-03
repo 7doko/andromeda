@@ -26,7 +26,6 @@ local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7do
 - Draggable window
 - Configurable menu keybind
 - Mouse cursor unlocking while the window is open
-- Permanent built-in watermark
 
 ## Quick start
 
@@ -174,10 +173,6 @@ Window:SetShadow(true)
 ```
 
 The underlying instance is also available as `Window.Shadow`.
-
-### Watermark
-
-Every Andromeda window includes a permanent `made with andromedaLib | @7doko` credit in the window header. It has no configuration or visibility controls.
 
 ### SetTheme
 
@@ -664,12 +659,17 @@ Unless `SettingsTab = false`, every window receives the clean built-in Settings 
 - **Appearance**
   - Theme dropdown
   - Window scale slider
+- **Shadow**
+  - Enabled toggle
+  - Color picker
+  - Transparency and blur sliders
+  - X/Y offset sliders
+  - X/Y spread sliders
 - **Behavior**
   - Notifications toggle
   - Notification scale slider
   - Tooltips toggle
   - Mute interface sounds toggle
-  - Send test notification button
   - Hide window button
 - **Menu**
   - Menu keybind, using Right Shift by default

@@ -530,8 +530,9 @@ function Andromeda:CreateWindow(config)
 			local range=options.Range or {options.Min or 0,options.Max or 100}
 			local minimum,maximum=range[1] or 0,range[2] or 100
 			local increment=options.Increment or options.Step or 1
-			local default=options.CurrentValue or options.Default or minimum
-			local value=math.clamp(default,minimum,maximum)
+			local default=math.clamp(tonumber(options.CurrentValue or options.Default) or minimum,minimum,maximum)
+			default=math.floor(default/increment+.5)*increment
+			local value=default
 			local object=host or row(options.Name or "Slider",compact and 50 or 55)
 			local name=textRole(text(object,"",UDim2.new(1,-55,0,22),theme.Text),"Text")
 			name.Position=UDim2.fromOffset(15,5)
@@ -789,10 +790,12 @@ function Andromeda:CreateWindow(config)
 				Name=sectionConfig.Name or "Section",Size=UDim2.new(1,0,0,0),
 				AutomaticSize=Enum.AutomaticSize.Y,BackgroundTransparency=1,BorderSizePixel=0,Parent=page,
 			})
+			section:SetAttribute("AndromedaSection",true)
 			make("UIListLayout",{Padding=UDim.new(0,10),SortOrder=Enum.SortOrder.LayoutOrder,Parent=section})
 			if not hidden then
 				local heading=textRole(text(section,sectionConfig.Name or "Section",UDim2.new(1,-30,0,24),theme.Muted),"Muted")
 				heading.Font,heading.TextSize,heading.LayoutOrder=Enum.Font.GothamBold,12,-1000
+				heading:SetAttribute("AndromedaSectionHeading",true)
 			end
 			local sectionApi={Instance=section}
 			buildControls(sectionApi,section)
@@ -837,19 +840,33 @@ function Andromeda:CreateWindow(config)
 	table.insert(connections,UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=false end
 	end))
+	local function featureMatches(object,query)
+		if query=="" then return true end
+		if string.find(string.lower(object.Name),query,1,true) then return true end
+		for _,descendant in ipairs(object:GetDescendants()) do
+			if (descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox"))
+				and string.find(string.lower(descendant.Text),query,1,true) then return true end
+		end
+		return false
+	end
 	local function applySearch()
 		local query=string.lower(searchBox.Text):match("^%s*(.-)%s*$")
 		if not selectedTab then return end
 		for _,child in ipairs(selectedTab.Page:GetChildren()) do
 			if child:IsA("GuiObject") then
-				local matches=query=="" or string.find(string.lower(child.Name),query,1,true)~=nil
-				if not matches then
-					for _,descendant in ipairs(child:GetDescendants()) do
-						if (descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox"))
-							and string.find(string.lower(descendant.Text),query,1,true) then matches=true;break end
+				if child:GetAttribute("AndromedaSection") then
+					local anyVisible=false
+					for _,control in ipairs(child:GetChildren()) do
+						if control:IsA("GuiObject") and not control:GetAttribute("AndromedaSectionHeading") then
+							local visible=featureMatches(control,query)
+							control.Visible=visible
+							if visible then anyVisible=true end
+						end
 					end
+					child.Visible=query=="" or anyVisible
+				else
+					child.Visible=featureMatches(child,query)
 				end
-				child.Visible=matches
 			end
 		end
 	end
@@ -875,6 +892,42 @@ function Andromeda:CreateWindow(config)
 			Name="Window scale",Range={.5,1.5},Increment=.05,CurrentValue=config.Scale or 1,
 			Description="changes the scale of the full Andromeda window",
 			Callback=function(value) window:SetScale(value) end,
+		})
+
+		local shadowSettings=settingsTab:CreateSection("Shadow")
+		shadowSettings:CreateToggle({
+			Name="Shadow enabled",CurrentValue=shadow.Enabled,
+			Description="shows or hides the native window shadow",
+			Callback=function(enabled) window:SetShadow(enabled) end,
+		})
+		shadowSettings:CreateColorPicker({
+			Name="Shadow color",Color=shadow.Color,
+			Description="changes the native shadow color",
+			Callback=function(value) window:SetShadow({Color=value}) end,
+		})
+		shadowSettings:CreateSlider({
+			Name="Shadow transparency",Range={0,1},Increment=.05,CurrentValue=shadow.Transparency,
+			Callback=function(value) window:SetShadow({Transparency=value}) end,
+		})
+		shadowSettings:CreateSlider({
+			Name="Shadow blur",Range={0,50},Increment=1,CurrentValue=shadow.BlurRadius.Offset,
+			Callback=function(value) window:SetShadow({BlurRadius=UDim.new(0,value)}) end,
+		})
+		shadowSettings:CreateSlider({
+			Name="Shadow offset X",Range={-30,30},Increment=1,CurrentValue=shadow.Offset.X.Offset,
+			Callback=function(value) window:SetShadow({Offset=UDim2.fromOffset(value,shadow.Offset.Y.Offset)}) end,
+		})
+		shadowSettings:CreateSlider({
+			Name="Shadow offset Y",Range={-30,30},Increment=1,CurrentValue=shadow.Offset.Y.Offset,
+			Callback=function(value) window:SetShadow({Offset=UDim2.fromOffset(shadow.Offset.X.Offset,value)}) end,
+		})
+		shadowSettings:CreateSlider({
+			Name="Shadow spread X",Range={-30,50},Increment=1,CurrentValue=shadow.Spread.X.Offset,
+			Callback=function(value) window:SetShadow({Spread=UDim2.fromOffset(value,shadow.Spread.Y.Offset)}) end,
+		})
+		shadowSettings:CreateSlider({
+			Name="Shadow spread Y",Range={-30,50},Increment=1,CurrentValue=shadow.Spread.Y.Offset,
+			Callback=function(value) window:SetShadow({Spread=UDim2.fromOffset(shadow.Spread.X.Offset,value)}) end,
 		})
 		local behavior=settingsTab:CreateSection("Behavior")
 		behavior:CreateToggle({
@@ -910,10 +963,6 @@ function Andromeda:CreateWindow(config)
 				hoverSound.Volume=enabled and 0 or .85
 				sliderSound.Volume=enabled and 0 or .05
 			end,
-		})
-		behavior:CreateButton({
-			Name="Send test notification",LockKeybind=true,
-			Callback=function() window:Notify("this is a test notification",2) end,
 		})
 		behavior:CreateButton({
 			Name="Hide window",LockKeybind=true,
