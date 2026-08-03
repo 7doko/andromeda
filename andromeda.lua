@@ -561,8 +561,8 @@ function Andromeda:CreateWindow(config)
 			local object = row(options.Name or "Toggle")
 			local name = textRole(text(object,options.Name or "Toggle",UDim2.new(1,-165,1,0),theme.Text),"Text")
 			name.Position=UDim2.fromOffset(15,0)
-			local switch = make("Frame",{Size=UDim2.fromOffset(42,20),Position=UDim2.new(1,-58,.5,-10),
-				BackgroundColor3=value and theme.Accent or Color3.fromRGB(55,58,65),BorderSizePixel=0,Parent=object})
+			local switch = role(make("Frame",{Size=UDim2.fromOffset(42,20),Position=UDim2.new(1,-58,.5,-10),
+				BackgroundColor3=value and theme.Accent or theme.Stroke,BorderSizePixel=0,Parent=object}),value and "Accent" or "Stroke")
 			round(switch,20)
 			local knob=make("Frame",{Size=UDim2.fromOffset(16,16),Position=value and UDim2.fromOffset(24,2) or UDim2.fromOffset(2,2),
 				BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Parent=switch})
@@ -573,7 +573,8 @@ function Andromeda:CreateWindow(config)
 			function control:Set(nextValue,silent)
 				value=nextValue==true
 				if options.Flag then Andromeda.Flags[options.Flag]=value end
-				tween(switch,{BackgroundColor3=value and theme.Accent or Color3.fromRGB(55,58,65)},.22)
+				switch:SetAttribute("AndromedaRole",value and "Accent" or "Stroke")
+				tween(switch,{BackgroundColor3=value and theme.Accent or theme.Stroke},.22)
 				tween(knob,{Position=value and UDim2.fromOffset(24,2) or UDim2.fromOffset(2,2)},.22)
 				if not silent then fire(options,value) end
 			end
