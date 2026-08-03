@@ -24,6 +24,7 @@ local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7do
 - Notifications and tooltips
 - Interface sounds and scaling
 - Draggable window
+- Header minimize and close controls
 - Configurable menu keybind
 - Mouse cursor unlocking while the window is open
 
@@ -131,6 +132,17 @@ Window:Toggle()
 ```
 
 Opening a window unlocks and shows the mouse cursor. Closing it restores the previous mouse behavior.
+
+### Minimize and close
+
+The header includes minimize and close buttons. Close hides the window without destroying it, so the configured menu key can reopen it.
+
+```lua
+Window:SetMinimized(true)
+Window:SetMinimized(false)
+Window:ToggleMinimized()
+Window:Close()
+```
 
 ### SetScale
 

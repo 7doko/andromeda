@@ -152,8 +152,9 @@ function Andromeda:CreateWindow(config)
 		DisplayOrder = config.DisplayOrder or 9999, ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		Parent = player.PlayerGui,
 	})
+	local windowSize = config.Size or UDim2.fromOffset(560,360)
 	local root = role(make("Frame", {
-		Name = "Window", Size = config.Size or UDim2.fromOffset(560,360),
+		Name = "Window", Size = windowSize,
 		Position = config.Position or UDim2.fromScale(.5,.5), AnchorPoint = Vector2.new(.5,.5),
 		BackgroundColor3 = theme.Background, BorderSizePixel = 0, ClipsDescendants = false,
 		Parent = gui,
@@ -187,8 +188,8 @@ function Andromeda:CreateWindow(config)
 	subtitle.Position, subtitle.TextSize = UDim2.fromOffset(20,34), 14
 
 	local searchBox = textRole(role(make("TextBox", {
-		Name = "feature search", Size = UDim2.fromOffset(170,30),
-		Position = UDim2.new(1,-185,0,12), BackgroundColor3 = theme.Element,
+		Name = "feature search", Size = UDim2.fromOffset(150,30),
+		Position = UDim2.new(1,-225,0,12), BackgroundColor3 = theme.Element,
 		BorderSizePixel = 0, ClearTextOnFocus = false, PlaceholderText = "search features...",
 		PlaceholderColor3 = theme.Muted, Text = "", TextColor3 = theme.Text,
 		TextSize = 13, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left,
@@ -199,15 +200,29 @@ function Andromeda:CreateWindow(config)
 	local watermarkLabel = textRole(text(
 		header,
 		"made with andromedaLib | @7doko",
-		UDim2.fromOffset(170,12),
+		UDim2.fromOffset(210,12),
 		theme.Muted
 	), "Muted")
 	watermarkLabel.Name = "Watermark"
-	watermarkLabel.Position = UDim2.new(1,-185,0,44)
+	watermarkLabel.Position = UDim2.new(1,-285,0,44)
 	watermarkLabel.Font = Enum.Font.GothamBold
 	watermarkLabel.TextSize = 9
 	watermarkLabel.TextXAlignment = Enum.TextXAlignment.Right
 	watermarkLabel.ZIndex = 5
+	local minimizeButton = textRole(role(make("TextButton", {
+		Name = "Minimize", Size = UDim2.fromOffset(24,24), Position = UDim2.new(1,-64,0,15),
+		BackgroundColor3 = theme.Element, BorderSizePixel = 0, AutoButtonColor = false,
+		Text = "—", TextColor3 = theme.Text, TextSize = 14, Font = Enum.Font.GothamBold,
+		Parent = header,
+	}), "Element"), "Text")
+	round(minimizeButton,7)
+	local closeButton = textRole(role(make("TextButton", {
+		Name = "Close", Size = UDim2.fromOffset(24,24), Position = UDim2.new(1,-34,0,15),
+		BackgroundColor3 = theme.Element, BorderSizePixel = 0, AutoButtonColor = false,
+		Text = "×", TextColor3 = theme.Text, TextSize = 16, Font = Enum.Font.GothamBold,
+		Parent = header,
+	}), "Element"), "Text")
+	round(closeButton,7)
 
 	local sidebar = role(make("ScrollingFrame", {
 		Size = UDim2.fromOffset(125,275), Position = UDim2.fromOffset(12,70),
@@ -260,7 +275,8 @@ function Andromeda:CreateWindow(config)
 
 	local window = {
 		Gui = gui, Main = root, Theme = theme, Tabs = tabs, Connections = connections,
-		Keybinds = keybinds, Visible = false, Settings = settings, Shadow = shadow,
+		Keybinds = keybinds, Visible = false, Minimized = false, Settings = settings, Shadow = shadow,
+		MinimizeButton = minimizeButton, CloseButton = closeButton,
 	}
 
 	local function play(sound)
@@ -289,6 +305,21 @@ function Andromeda:CreateWindow(config)
 			tooltip.Visible = false
 		end))
 	end
+	for _, buttonData in ipairs({
+		{Button=minimizeButton, Tooltip="collapses or restores the window"},
+		{Button=closeButton, Tooltip="hides the window; press the menu keybind to reopen it"},
+	}) do
+		local button = buttonData.Button
+		attachTooltip(button,buttonData.Tooltip)
+		table.insert(connections,button.MouseEnter:Connect(function() tween(button,{BackgroundColor3=theme.Accent},.15) end))
+		table.insert(connections,button.MouseLeave:Connect(function() tween(button,{BackgroundColor3=theme.Element},.15) end))
+	end
+	table.insert(connections,minimizeButton.MouseButton1Click:Connect(function()
+		play(clickSound);window:ToggleMinimized()
+	end))
+	table.insert(connections,closeButton.MouseButton1Click:Connect(function()
+		play(clickSound);window:Close()
+	end))
 	table.insert(connections, UserInputService.InputChanged:Connect(function(input)
 		if tooltip.Visible and input.UserInputType == Enum.UserInputType.MouseMovement then
 			tooltip.Position = UDim2.fromOffset(input.Position.X + 15, input.Position.Y + 15)
@@ -353,6 +384,16 @@ function Andromeda:CreateWindow(config)
 		end
 	end
 	function window:Toggle() self:SetVisible(not self.Visible) end
+	function window:SetMinimized(value)
+		local minimized = value == true
+		self.Minimized = minimized
+		sidebar.Visible = not minimized
+		content.Visible = not minimized
+		root.Size = minimized and UDim2.new(windowSize.X.Scale,windowSize.X.Offset,0,58) or windowSize
+		minimizeButton.Text = minimized and "+" or "—"
+	end
+	function window:ToggleMinimized() self:SetMinimized(not self.Minimized) end
+	function window:Close() self:SetVisible(false) end
 	function window:SetScale(value) uiScale.Scale = math.clamp(tonumber(value) or 1, .5, 1.5) end
 	function window:SetShadow(values)
 		if type(values) == "boolean" then shadow.Enabled = values return end
