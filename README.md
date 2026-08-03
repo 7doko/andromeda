@@ -36,7 +36,7 @@ local Window = Andromeda:CreateWindow({
 	Name = "My Hub",
 	Subtitle = "made with Andromeda",
 	ThemeName = "andromeda",
-	ToggleKey = Enum.KeyCode.RightShift,
+	ToggleKey = Enum.KeyCode.K,
 })
 
 local Main = Window:CreateTab("Main")
@@ -61,7 +61,7 @@ local Window = Andromeda:CreateWindow({
 	Name = "My Hub",
 	Subtitle = "Utility interface",
 	ThemeName = "andromeda",
-	ToggleKey = Enum.KeyCode.RightShift,
+	ToggleKey = Enum.KeyCode.K,
 	Scale = 1,
 	SettingsTab = true,
 })
@@ -81,7 +81,7 @@ local Window = Andromeda:CreateWindow({
 | `Position` | UDim2 | `UDim2.fromScale(0.5, 0.5)` | Initial window position. |
 | `Scale` | number | `1` | Initial UI scale. |
 | `Shadow` | boolean or table | table | Set to `false` to disable the UIShadow, or provide custom shadow properties. |
-| `ToggleKey` | Enum.KeyCode | `RightShift` | Key used by the built-in settings tab to show or hide the menu. |
+| `ToggleKey` | Enum.KeyCode | `K` | Key used by the built-in settings tab to show or hide the menu. |
 | `SettingsTab` | boolean | `true` | Whether the built-in settings tab is created. |
 | `SettingsTabName` | string | `Settings` | Name of the built-in settings tab. |
 
@@ -669,7 +669,7 @@ Unless `SettingsTab = false`, every window receives the clean built-in Settings 
   - Mute interface sounds toggle
   - Hide window button
 - **Menu**
-  - Menu keybind, using Right Shift by default
+  - Menu keybind, using K by default
   - Clear editable keybinds button
 
 The menu keybind can be changed, but it cannot be cleared.
@@ -730,7 +730,7 @@ local Window = Andromeda:CreateWindow({
 	Name = "Example Hub",
 	Subtitle = "Andromeda documentation example",
 	ThemeName = "andromeda",
-	ToggleKey = Enum.KeyCode.RightShift,
+	ToggleKey = Enum.KeyCode.K,
 })
 
 local Main = Window:CreateTab("Main")
@@ -829,7 +829,7 @@ The keybind was probably created with `LockKeybind = true`. Locked keybinds cann
 
 ### The menu disappeared
 
-Press the configured `ToggleKey`. The default is Right Shift.
+Press the configured `ToggleKey`. The default is K.
 
 ### A callback failed
 

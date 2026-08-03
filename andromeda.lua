@@ -950,7 +950,7 @@ function Andromeda:CreateWindow(config)
 
 		local menu=settingsTab:CreateSection("Menu")
 		local menuBind=menu:CreateKeybind({
-			Name="Toggle menu",CurrentKeybind=config.ToggleKey or Enum.KeyCode.RightShift,
+			Name="Toggle menu",CurrentKeybind=config.ToggleKey or Enum.KeyCode.K,
 			LockKeybind=true,Rebindable=true,AllowProcessed=true,Description="shows or hides the menu",
 			Callback=function() window:Toggle() end,
 		})
