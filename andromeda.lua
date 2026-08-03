@@ -151,37 +151,6 @@ function Andromeda:CreateWindow(config)
 		DisplayOrder = config.DisplayOrder or 9999, ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		Parent = player.PlayerGui,
 	})
-	local watermark = role(make("Frame", {
-		Name = "Watermark", Size = UDim2.fromOffset(0,32), AutomaticSize = Enum.AutomaticSize.X,
-		Position = UDim2.fromOffset(16,54),
-		BackgroundColor3 = theme.Panel, BackgroundTransparency = .08, BorderSizePixel = 0,
-		Visible = true, ZIndex = 100, Parent = gui,
-	}), "Panel")
-	round(watermark,9)
-	role(make("UIStroke", {Color = theme.Stroke, Transparency = .25, Parent = watermark}), "Stroke", "Color")
-	pad(watermark,0,12,0,12)
-	make("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0,7),
-		VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = watermark,
-	})
-	local watermarkDot = role(make("Frame", {
-		Name = "Accent", Size = UDim2.fromOffset(6,6), BackgroundColor3 = theme.Accent,
-		BorderSizePixel = 0, LayoutOrder = 1, ZIndex = 101, Parent = watermark,
-	}), "Accent")
-	round(watermarkDot,6)
-	local watermarkLabel = textRole(text(
-		watermark,
-		"made with andromedaLib | @7doko",
-		UDim2.fromOffset(0,32),
-		theme.Text
-	), "Text")
-	watermarkLabel.Name = "Label"
-	watermarkLabel.AutomaticSize = Enum.AutomaticSize.X
-	watermarkLabel.Font = Enum.Font.GothamBold
-	watermarkLabel.TextSize = 12
-	watermarkLabel.LayoutOrder = 2
-	watermarkLabel.ZIndex = 101
 	local root = role(make("Frame", {
 		Name = "Window", Size = config.Size or UDim2.fromOffset(560,360),
 		Position = config.Position or UDim2.fromScale(.5,.5), AnchorPoint = Vector2.new(.5,.5),
@@ -220,6 +189,18 @@ function Andromeda:CreateWindow(config)
 	}), "Element"), "Text")
 	round(searchBox,8)
 	pad(searchBox,0,10,0,10)
+	local watermarkLabel = textRole(text(
+		header,
+		"made with andromedaLib | @7doko",
+		UDim2.fromOffset(170,12),
+		theme.Muted
+	), "Muted")
+	watermarkLabel.Name = "Watermark"
+	watermarkLabel.Position = UDim2.new(1,-185,0,44)
+	watermarkLabel.Font = Enum.Font.GothamBold
+	watermarkLabel.TextSize = 9
+	watermarkLabel.TextXAlignment = Enum.TextXAlignment.Right
+	watermarkLabel.ZIndex = 5
 
 	local sidebar = role(make("ScrollingFrame", {
 		Size = UDim2.fromOffset(125,275), Position = UDim2.fromOffset(12,70),
