@@ -662,9 +662,6 @@ Unless `SettingsTab = false`, every window receives the clean built-in Settings 
 - **Shadow**
   - Enabled toggle
   - Color picker
-  - Transparency and blur sliders
-  - X/Y offset sliders
-  - X/Y spread sliders
 - **Behavior**
   - Notifications toggle
   - Notification scale slider

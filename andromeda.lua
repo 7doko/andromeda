@@ -400,6 +400,7 @@ function Andromeda:CreateWindow(config)
 			Key = keyCode(options.CurrentKeybind or options.Keybind),
 			Locked = options.LockKeybind == true,
 			Rebindable = options.Rebindable == true or options.LockKeybind ~= true,
+			AllowProcessed = options.AllowProcessed == true,
 		}
 		local button = textRole(role(make("TextButton", {
 			Size = UDim2.fromOffset(38,20), Position = UDim2.new(1,offset or -55,.5,-10),
@@ -821,9 +822,10 @@ function Andromeda:CreateWindow(config)
 			if input.UserInputType==Enum.UserInputType.Keyboard then listeningBind:SetKey(input.KeyCode);listeningBind=nil end
 			return
 		end
-		if processed then return end
 		for _,bind in ipairs(keybinds) do
-			if bind.Key and bind.Key==input.KeyCode then callback(bind.Handler) end
+			if bind.Key and bind.Key==input.KeyCode and (not processed or bind.AllowProcessed) then
+				callback(bind.Handler)
+			end
 		end
 	end))
 
@@ -905,30 +907,6 @@ function Andromeda:CreateWindow(config)
 			Description="changes the native shadow color",
 			Callback=function(value) window:SetShadow({Color=value}) end,
 		})
-		shadowSettings:CreateSlider({
-			Name="Shadow transparency",Range={0,1},Increment=.05,CurrentValue=shadow.Transparency,
-			Callback=function(value) window:SetShadow({Transparency=value}) end,
-		})
-		shadowSettings:CreateSlider({
-			Name="Shadow blur",Range={0,50},Increment=1,CurrentValue=shadow.BlurRadius.Offset,
-			Callback=function(value) window:SetShadow({BlurRadius=UDim.new(0,value)}) end,
-		})
-		shadowSettings:CreateSlider({
-			Name="Shadow offset X",Range={-30,30},Increment=1,CurrentValue=shadow.Offset.X.Offset,
-			Callback=function(value) window:SetShadow({Offset=UDim2.fromOffset(value,shadow.Offset.Y.Offset)}) end,
-		})
-		shadowSettings:CreateSlider({
-			Name="Shadow offset Y",Range={-30,30},Increment=1,CurrentValue=shadow.Offset.Y.Offset,
-			Callback=function(value) window:SetShadow({Offset=UDim2.fromOffset(shadow.Offset.X.Offset,value)}) end,
-		})
-		shadowSettings:CreateSlider({
-			Name="Shadow spread X",Range={-30,50},Increment=1,CurrentValue=shadow.Spread.X.Offset,
-			Callback=function(value) window:SetShadow({Spread=UDim2.fromOffset(value,shadow.Spread.Y.Offset)}) end,
-		})
-		shadowSettings:CreateSlider({
-			Name="Shadow spread Y",Range={-30,50},Increment=1,CurrentValue=shadow.Spread.Y.Offset,
-			Callback=function(value) window:SetShadow({Spread=UDim2.fromOffset(shadow.Spread.X.Offset,value)}) end,
-		})
 		local behavior=settingsTab:CreateSection("Behavior")
 		behavior:CreateToggle({
 			Name="Notifications",CurrentValue=true,
@@ -973,7 +951,7 @@ function Andromeda:CreateWindow(config)
 		local menu=settingsTab:CreateSection("Menu")
 		local menuBind=menu:CreateKeybind({
 			Name="Toggle menu",CurrentKeybind=config.ToggleKey or Enum.KeyCode.RightShift,
-			LockKeybind=true,Rebindable=true,Description="shows or hides the menu",
+			LockKeybind=true,Rebindable=true,AllowProcessed=true,Description="shows or hides the menu",
 			Callback=function() window:Toggle() end,
 		})
 		window.MenuKeybind=menuBind
