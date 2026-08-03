@@ -156,7 +156,7 @@ function Andromeda:CreateWindow(config)
 	local root = role(make("Frame", {
 		Name = "Window", Size = windowSize,
 		Position = config.Position or UDim2.fromScale(.5,.5), AnchorPoint = Vector2.new(.5,.5),
-		BackgroundColor3 = theme.Background, BorderSizePixel = 0, ClipsDescendants = false,
+		BackgroundColor3 = theme.Background, BorderSizePixel = 0, ClipsDescendants = false, Active = true,
 		Parent = gui,
 	}), "Background")
 	round(root, 14)
@@ -871,17 +871,21 @@ function Andromeda:CreateWindow(config)
 	end))
 
 	local dragging=false;local dragStart;local startPosition
-	table.insert(connections,header.InputBegan:Connect(function(input)
-		if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=true;dragStart=input.Position;startPosition=root.Position end
-	end))
+	local function beginDrag(input)
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+			dragging=true;dragStart=input.Position;startPosition=root.Position
+		end
+	end
+	table.insert(connections,header.InputBegan:Connect(beginDrag))
+	table.insert(connections,root.InputBegan:Connect(beginDrag))
 	table.insert(connections,UserInputService.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then
+		if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
 			local delta=input.Position-dragStart
 			root.Position=UDim2.new(startPosition.X.Scale,startPosition.X.Offset+delta.X,startPosition.Y.Scale,startPosition.Y.Offset+delta.Y)
 		end
 	end))
 	table.insert(connections,UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=false end
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging=false end
 	end))
 	local function featureMatches(object,query)
 		if query=="" then return true end

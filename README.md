@@ -23,7 +23,7 @@ local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7do
 - Flags for storing control values
 - Notifications and tooltips
 - Interface sounds and scaling
-- Draggable window
+- Window dragging from the header, side borders, and bottom border
 - Header minimize and close controls
 - Configurable menu keybind
 - Mouse cursor unlocking while the window is open
