@@ -136,6 +136,7 @@ function Andromeda:CreateWindow(config)
 
 	local themeName = config.ThemeName or "andromeda"
 	local theme = merge(self.Themes[themeName] or self.Themes.andromeda, config.Theme)
+	local shadowConfig = type(config.Shadow) == "table" and config.Shadow or {}
 	local connections, tabs, keybinds = {}, {}, {}
 	local selectedTab, listeningBind
 	local savedMouseBehavior, savedMouseIconEnabled
@@ -161,10 +162,16 @@ function Andromeda:CreateWindow(config)
 	role(make("UIStroke", {Color = theme.Stroke, Transparency = .25, Parent = root}), "Stroke", "Color")
 	local uiScale = make("UIScale", {Scale = config.Scale or 1, Parent = root})
 
-	local shadow = make("ImageLabel", {
-		Name = "Shadow", Size = UDim2.new(1,50,1,50), Position = UDim2.fromOffset(-25,-18),
-		BackgroundTransparency = 1, Image = "rbxassetid://6014261993",
-		ImageColor3 = Color3.new(0,0,0), ImageTransparency = .5, ZIndex = -1, Parent = root,
+	local shadow = make("UIShadow", {
+		Name = "Shadow",
+		Enabled = config.Shadow ~= false and shadowConfig.Enabled ~= false,
+		BlurRadius = shadowConfig.BlurRadius or UDim.new(0,18),
+		Color = shadowConfig.Color or Color3.new(0,0,0),
+		Offset = shadowConfig.Offset or UDim2.fromOffset(0,7),
+		Spread = shadowConfig.Spread or UDim2.fromOffset(8,8),
+		Transparency = math.clamp(tonumber(shadowConfig.Transparency) or .5,0,1),
+		ZIndex = math.min(math.floor(tonumber(shadowConfig.ZIndex) or -1),-1),
+		Parent = root,
 	})
 
 	local header = role(make("Frame", {
@@ -253,7 +260,7 @@ function Andromeda:CreateWindow(config)
 
 	local window = {
 		Gui = gui, Main = root, Theme = theme, Tabs = tabs, Connections = connections,
-		Keybinds = keybinds, Visible = false, Settings = settings,
+		Keybinds = keybinds, Visible = false, Settings = settings, Shadow = shadow,
 	}
 
 	local function play(sound)
@@ -347,6 +354,16 @@ function Andromeda:CreateWindow(config)
 	end
 	function window:Toggle() self:SetVisible(not self.Visible) end
 	function window:SetScale(value) uiScale.Scale = math.clamp(tonumber(value) or 1, .5, 1.5) end
+	function window:SetShadow(values)
+		if type(values) == "boolean" then shadow.Enabled = values return end
+		local allowed = {
+			Enabled=true,BlurRadius=true,Color=true,Offset=true,Spread=true,
+			Transparency=true,ZIndex=true,
+		}
+		for property,value in pairs(values or {}) do
+			if allowed[property] then pcall(function() shadow[property]=value end) end
+		end
+	end
 	function window:SetTheme(nextTheme)
 		if type(nextTheme) == "string" then
 			theme = merge(Andromeda.Themes[nextTheme] or Andromeda.Themes.andromeda)

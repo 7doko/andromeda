@@ -81,6 +81,7 @@ local Window = Andromeda:CreateWindow({
 | `Size` | UDim2 | `UDim2.fromOffset(560, 360)` | Window size. |
 | `Position` | UDim2 | `UDim2.fromScale(0.5, 0.5)` | Initial window position. |
 | `Scale` | number | `1` | Initial UI scale. |
+| `Shadow` | boolean or table | table | Set to `false` to disable the UIShadow, or provide custom shadow properties. |
 | `ToggleKey` | Enum.KeyCode | `RightShift` | Key used by the built-in settings tab to show or hide the menu. |
 | `SettingsTab` | boolean | `true` | Whether the built-in settings tab is created. |
 | `SettingsTabName` | string | `Settings` | Name of the built-in settings tab. |
@@ -139,6 +140,40 @@ Window:SetScale(1.1)
 ```
 
 The value is clamped between `0.5` and `1.5`.
+
+### Shadow
+
+Andromeda uses Roblox's native `UIShadow`. Customize it while creating the window:
+
+```lua
+local Window = Andromeda:CreateWindow({
+	Name = "My Hub",
+	Shadow = {
+		Enabled = true,
+		BlurRadius = UDim.new(0, 18),
+		Color = Color3.fromRGB(0, 0, 0),
+		Offset = UDim2.fromOffset(0, 7),
+		Spread = UDim2.fromOffset(8, 8),
+		Transparency = 0.5,
+		ZIndex = -1,
+	},
+})
+```
+
+Update it later through the window API:
+
+```lua
+Window:SetShadow({
+	Color = Color3.fromRGB(120, 90, 255),
+	BlurRadius = UDim.new(0, 24),
+	Transparency = 0.65,
+})
+
+Window:SetShadow(false)
+Window:SetShadow(true)
+```
+
+The underlying instance is also available as `Window.Shadow`.
 
 ### Watermark
 
