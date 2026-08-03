@@ -156,12 +156,17 @@ function Andromeda:CreateWindow(config)
 	local root = role(make("Frame", {
 		Name = "Window", Size = windowSize,
 		Position = config.Position or UDim2.fromScale(.5,.5), AnchorPoint = Vector2.new(.5,.5),
-		BackgroundColor3 = theme.Background, BorderSizePixel = 0, ClipsDescendants = false, Active = true,
+		BackgroundColor3 = theme.Background, BorderSizePixel = 0, ClipsDescendants = false,
 		Parent = gui,
 	}), "Background")
 	round(root, 14)
 	role(make("UIStroke", {Color = theme.Stroke, Transparency = .25, Parent = root}), "Stroke", "Color")
 	local uiScale = make("UIScale", {Scale = config.Scale or 1, Parent = root})
+	local dragHandles = {
+		make("Frame", {Name="LeftDragHandle",Size=UDim2.new(0,12,1,-58),Position=UDim2.fromOffset(0,58),BackgroundTransparency=1,Active=true,ZIndex=20,Parent=root}),
+		make("Frame", {Name="RightDragHandle",Size=UDim2.new(0,15,1,-58),Position=UDim2.new(1,-15,0,58),BackgroundTransparency=1,Active=true,ZIndex=20,Parent=root}),
+		make("Frame", {Name="BottomDragHandle",Size=UDim2.new(1,0,0,15),Position=UDim2.new(0,0,1,-15),BackgroundTransparency=1,Active=true,ZIndex=21,Parent=root}),
+	}
 
 	local shadow = make("UIShadow", {
 		Name = "Shadow",
@@ -386,10 +391,28 @@ function Andromeda:CreateWindow(config)
 	function window:Toggle() self:SetVisible(not self.Visible) end
 	function window:SetMinimized(value)
 		local minimized = value == true
+		if minimized == self.Minimized then return end
+		if minimized then
+			self.ExpandedPosition = root.Position
+			local shift = math.max((root.AbsoluteSize.Y-58)/2,0)
+			root.Position = UDim2.new(root.Position.X.Scale,root.Position.X.Offset,root.Position.Y.Scale,root.Position.Y.Offset-shift)
+			self.MinimizedPosition = root.Position
+		else
+			local current = root.Position
+			local start = self.MinimizedPosition or current
+			local expanded = self.ExpandedPosition or current
+			root.Position = UDim2.new(
+				expanded.X.Scale+current.X.Scale-start.X.Scale,
+				expanded.X.Offset+current.X.Offset-start.X.Offset,
+				expanded.Y.Scale+current.Y.Scale-start.Y.Scale,
+				expanded.Y.Offset+current.Y.Offset-start.Y.Offset
+			)
+		end
 		self.Minimized = minimized
 		sidebar.Visible = not minimized
 		content.Visible = not minimized
 		root.Size = minimized and UDim2.new(windowSize.X.Scale,windowSize.X.Offset,0,58) or windowSize
+		for _,handle in ipairs(dragHandles) do handle.Visible = not minimized end
 		minimizeButton.Text = minimized and "+" or "—"
 	end
 	function window:ToggleMinimized() self:SetMinimized(not self.Minimized) end
@@ -444,6 +467,7 @@ function Andromeda:CreateWindow(config)
 			AllowProcessed = options.AllowProcessed == true,
 		}
 		local button = textRole(role(make("TextButton", {
+			Name = "KeybindButton", ZIndex = 3,
 			Size = UDim2.fromOffset(38,20), Position = UDim2.new(1,offset or -55,.5,-10),
 			BackgroundColor3 = theme.Panel, BorderSizePixel = 0, AutoButtonColor = false,
 			Text = bind.Key and bind.Key.Name or "...", TextColor3 = theme.Text,
@@ -543,7 +567,7 @@ function Andromeda:CreateWindow(config)
 			local knob=make("Frame",{Size=UDim2.fromOffset(16,16),Position=value and UDim2.fromOffset(24,2) or UDim2.fromOffset(2,2),
 				BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Parent=switch})
 			round(knob,20)
-			local switchHit=make("TextButton",{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,
+			local switchHit=make("TextButton",{Name="SwitchHit",Size=UDim2.fromScale(1,1),BackgroundTransparency=1,
 				BorderSizePixel=0,Text="",AutoButtonColor=false,ZIndex=2,Parent=switch})
 			local control={}
 			function control:Set(nextValue,silent)
@@ -559,7 +583,7 @@ function Andromeda:CreateWindow(config)
 			control.SetKey=function(_,v) bind:SetKey(v) end
 			control.GetKey=function() return bind:GetKey() end
 			control.ClearKey=function() bind:ClearKey() end
-			local hit=make("TextButton",{Size=UDim2.new(1,-55,1,0),BackgroundTransparency=1,Text="",Parent=object})
+			local hit=make("TextButton",{Name="ToggleHit",Size=UDim2.new(1,-115,1,0),BackgroundTransparency=1,Text="",Parent=object})
 			table.insert(connections,hit.MouseButton1Click:Connect(toggle))
 			table.insert(connections,switchHit.MouseButton1Click:Connect(toggle))
 			if options.Flag then Andromeda.Flags[options.Flag]=value end
@@ -860,7 +884,9 @@ function Andromeda:CreateWindow(config)
 
 	table.insert(connections,UserInputService.InputBegan:Connect(function(input,processed)
 		if listeningBind then
-			if input.UserInputType==Enum.UserInputType.Keyboard then listeningBind:SetKey(input.KeyCode);listeningBind=nil end
+			if input.UserInputType==Enum.UserInputType.Keyboard and input.KeyCode~=Enum.KeyCode.Unknown then
+				listeningBind:SetKey(input.KeyCode);listeningBind=nil
+			end
 			return
 		end
 		for _,bind in ipairs(keybinds) do
@@ -877,7 +903,9 @@ function Andromeda:CreateWindow(config)
 		end
 	end
 	table.insert(connections,header.InputBegan:Connect(beginDrag))
-	table.insert(connections,root.InputBegan:Connect(beginDrag))
+	for _,handle in ipairs(dragHandles) do
+		table.insert(connections,handle.InputBegan:Connect(beginDrag))
+	end
 	table.insert(connections,UserInputService.InputChanged:Connect(function(input)
 		if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
 			local delta=input.Position-dragStart
