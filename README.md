@@ -56,16 +56,6 @@ Features:CreateToggle({
 
 The loadstring returns the Andromeda API. The interface is created when you call `Andromeda:CreateWindow()`.
 
-## Legacy version
-
-Version 2.0 is now the main `andromeda.lua`. The previous v1.0.2 library remains available as:
-
-```lua
-local Andromeda = loadstring(game:HttpGet(
-	"https://raw.githubusercontent.com/7doko/andromeda/main/andromeda-old.lua"
-))()
-```
-
 The current library uses a compact two-column layout with icon-ready sidebar tabs, animated hover feedback, top search, collapsible sections, independent column scrolling, bottom-right notifications, and window controls.
 
 ```lua
