@@ -163,7 +163,7 @@ Window:SetVisible(true)
 Window:Toggle()
 ```
 
-Opening a window unlocks and shows the mouse cursor. Closing it restores the previous mouse behavior.
+Opening a window activates a transparent modal input layer and continuously keeps the mouse unlocked and visible, including during shift lock. Closing it restores the previous mouse behavior.
 
 ### Minimize and close
 
@@ -684,6 +684,9 @@ Built-in themes:
 - `cyber`
 - `monochrome`
 - `coffee`
+- `aurora`
+- `solarized`
+- `paper`
 
 Add your own named theme:
 

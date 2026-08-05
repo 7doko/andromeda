@@ -2,11 +2,12 @@
 -- Compact two-column Roblox UI library by @7doko.
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Andromeda = {
-	Version = "2.0.3",
+	Version = "2.0.4",
 	Flags = {},
 	Windows = {},
 	IconBaseUrl = "https://raw.githubusercontent.com/7doko/andromeda/main/assets/icons/",
@@ -69,6 +70,18 @@ local Andromeda = {
 		coffee = {
 			Background=Color3.fromRGB(21,16,13),Panel=Color3.fromRGB(32,24,19),Element=Color3.fromRGB(47,35,28),
 			Accent=Color3.fromRGB(206,150,98),Text=Color3.fromRGB(250,239,226),Muted=Color3.fromRGB(177,151,127),Stroke=Color3.fromRGB(82,62,49),
+		},
+		aurora = {
+			Background=Color3.fromRGB(5,17,23),Panel=Color3.fromRGB(8,28,33),Element=Color3.fromRGB(14,43,46),
+			Accent=Color3.fromRGB(94,242,181),Text=Color3.fromRGB(231,255,249),Muted=Color3.fromRGB(116,171,164),Stroke=Color3.fromRGB(29,76,75),
+		},
+		solarized = {
+			Background=Color3.fromRGB(0,43,54),Panel=Color3.fromRGB(7,54,66),Element=Color3.fromRGB(12,66,78),
+			Accent=Color3.fromRGB(181,137,0),Text=Color3.fromRGB(238,232,213),Muted=Color3.fromRGB(131,148,150),Stroke=Color3.fromRGB(42,86,97),
+		},
+		paper = {
+			Background=Color3.fromRGB(241,238,244),Panel=Color3.fromRGB(229,224,234),Element=Color3.fromRGB(214,207,222),
+			Accent=Color3.fromRGB(112,78,196),Text=Color3.fromRGB(48,42,57),Muted=Color3.fromRGB(112,101,124),Stroke=Color3.fromRGB(186,177,198),
 		},
 	},
 }
@@ -273,7 +286,7 @@ function Andromeda:CreateWindow(config)
 	local shadowConfig=type(config.Shadow)=="table" and config.Shadow or {}
 	local connections,tabs,keybinds={},{},{}
 	local selectedTab,listeningBind
-	local savedMouseBehavior,savedMouseIconEnabled
+	local savedMouseBehavior,savedMouseIconEnabled,savedOverrideMouseIconBehavior
 	local settings={Notifications=true,Tooltips=true,Muted=false,NotificationScale=1}
 	local guiName=config.GuiName or "andromedaLib"
 	local guiParent=config.UseExecutorGui==false and player.PlayerGui or executorGuiParent() or player.PlayerGui
@@ -345,11 +358,15 @@ function Andromeda:CreateWindow(config)
 	protectExecutorGui(gui)
 	local parented=pcall(function() gui.Parent=guiParent end)
 	if not parented then gui.Parent=player.PlayerGui end
+	local modalCatcher=make("TextButton",{
+		Name="MenuInputUnlock",Size=UDim2.fromScale(1,1),BackgroundTransparency=1,BorderSizePixel=0,
+		AutoButtonColor=false,Text="",Active=true,Modal=true,Visible=false,Parent=gui,
+	})
 	local windowSize=config.Size or UDim2.fromOffset(720,600)
 	local root=role(make("Frame",{
 		Name="Window",Size=windowSize,Position=config.Position or UDim2.fromScale(.5,.5),
 		AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=theme.Background,BorderSizePixel=0,
-		ClipsDescendants=false,Parent=gui,
+		ClipsDescendants=false,ZIndex=2,Parent=gui,
 	}),"Background")
 	corner(root,4)
 	role(make("UIStroke",{Color=theme.Stroke,Thickness=1,Transparency=.1,Parent=root}),"Stroke","Color")
@@ -552,17 +569,28 @@ function Andromeda:CreateWindow(config)
 		return box
 	end
 
+	local function forceMouseUnlocked()
+		UserInputService.MouseBehavior=Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled=true
+		pcall(function() UserInputService.OverrideMouseIconBehavior=Enum.OverrideMouseIconBehavior.ForceShow end)
+	end
+	table.insert(connections,RunService.RenderStepped:Connect(function()
+		if window.Visible then forceMouseUnlocked() end
+	end))
+
 	function window:SetVisible(value)
 		local visible=value==true
 		if visible and not self.Visible then
 			savedMouseBehavior=UserInputService.MouseBehavior
 			savedMouseIconEnabled=UserInputService.MouseIconEnabled
+			pcall(function() savedOverrideMouseIconBehavior=UserInputService.OverrideMouseIconBehavior end)
 		elseif not visible and self.Visible then
 			if savedMouseBehavior then UserInputService.MouseBehavior=savedMouseBehavior end
 			if savedMouseIconEnabled~=nil then UserInputService.MouseIconEnabled=savedMouseIconEnabled end
+			if savedOverrideMouseIconBehavior~=nil then pcall(function() UserInputService.OverrideMouseIconBehavior=savedOverrideMouseIconBehavior end) end
 		end
-		self.Visible=visible;root.Visible=visible;if not visible then tooltip.Visible=false end
-		if visible then UserInputService.MouseBehavior=Enum.MouseBehavior.Default;UserInputService.MouseIconEnabled=true end
+		self.Visible=visible;root.Visible=visible;modalCatcher.Visible=visible;if not visible then tooltip.Visible=false end
+		if visible then forceMouseUnlocked() end
 	end
 	function window:Toggle() self:SetVisible(not self.Visible) end
 	function window:Close() self:SetVisible(false) end
@@ -607,11 +635,13 @@ function Andromeda:CreateWindow(config)
 			if textTheme and theme[textTheme] then pcall(function() object.TextColor3=theme[textTheme] end) end
 			if object:IsA("ScrollingFrame") then object.ScrollBarImageColor3=theme.Accent end
 		end
+		if self.AccentPicker and self.AccentPicker:Get()~=theme.Accent then self.AccentPicker:Set(theme.Accent,true) end
 	end
 	function window:ClearKeybinds(includeLocked)
 		for _,bind in ipairs(keybinds) do if includeLocked or not bind.Locked then bind:SetKey(nil) end end
 	end
 	function window:Destroy()
+		if self.Visible then self:SetVisible(false) end
 		for _,connection in ipairs(connections) do connection:Disconnect() end
 		table.clear(connections);gui:Destroy()
 		for index,item in ipairs(Andromeda.Windows) do if item==self then table.remove(Andromeda.Windows,index) break end end
@@ -1022,7 +1052,7 @@ function Andromeda:CreateWindow(config)
 		local appearance=settingsTab:CreateSection({Name="Themes",Side="Left"})
 		local themeNames={} for name in pairs(Andromeda.Themes) do table.insert(themeNames,name) end table.sort(themeNames)
 		appearance:CreateDropdown({Name="Theme",Options=themeNames,CurrentOption=themeName,Callback=function(value) window:SetTheme(value) end})
-		appearance:CreateColorPicker({Name="Accent color",Color=theme.Accent,Callback=function(value) window:SetTheme({Accent=value}) end})
+		window.AccentPicker=appearance:CreateColorPicker({Name="Accent color",Color=theme.Accent,Callback=function(value) window:SetTheme({Accent=value}) end})
 		local shadowSettings=settingsTab:CreateSection({Name="Shadow",Side="Right"})
 		shadowSettings:CreateToggle({Name="Shadow enabled",CurrentValue=shadow.Enabled,Callback=function(value) window:SetShadow(value) end})
 		shadowSettings:CreateColorPicker({Name="Shadow color",Color=shadow.Color,Callback=function(value) window:SetShadow({Color=value}) end})
