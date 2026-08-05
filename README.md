@@ -108,7 +108,6 @@ local Window = Andromeda:CreateWindow({
 | `AutoFit` | boolean | `true` | Shrinks the window horizontally when needed so its left and right edges stay inside the viewport. |
 | `FitPadding` | number | `12` | Minimum viewport padding used by automatic horizontal fitting. |
 | `Shadow` | boolean or table | table | Set to `false` to disable the UIShadow, or provide custom shadow properties. |
-| `Footer` | string | `andromedaLib ...` | Text displayed in the window footer. |
 | `Icons` | table | empty IDs | Optional Roblox asset IDs that override the automatically cached icons. |
 | `CacheIcons` | boolean | `true` | Downloads missing icons into the executor workspace and loads them as custom assets. |
 | `IconFolder` | string | `andromedaLib/icons` | Executor workspace folder used for cached PNG icons. |
@@ -119,6 +118,8 @@ local Window = Andromeda:CreateWindow({
 | `SettingsTabName` | string | `UI Settings` | Name of the built-in settings tab. |
 
 Creating another window with the same `GuiName` destroys the previous ScreenGui with that name.
+
+The footer signature is fixed to `andromedaLib | v<version> | @7doko` and has no configuration option.
 
 ## Window methods
 

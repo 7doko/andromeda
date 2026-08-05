@@ -5,7 +5,6 @@ local Andromeda = loadstring(game:HttpGet(
 local Window = Andromeda:CreateWindow({
 	Name = "ANDROMEDA | V2",
 	ThemeName = "andromeda",
-	Footer = "andromedaLib | v2.0.5 | @7doko",
 })
 
 local Controls = Window:CreateTab("Controls")

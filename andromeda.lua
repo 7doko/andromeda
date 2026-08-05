@@ -7,7 +7,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Andromeda = {
-	Version = "2.0.5",
+	Version = "2.0.6",
 	Flags = {},
 	Windows = {},
 	IconBaseUrl = "https://raw.githubusercontent.com/7doko/andromeda/main/assets/icons/",
@@ -445,7 +445,7 @@ function Andromeda:CreateWindow(config)
 		BackgroundColor3=theme.Background,BorderSizePixel=0,Parent=root,
 	}),"Background")
 	make("Frame",{Size=UDim2.new(1,0,0,1),BackgroundColor3=theme.Stroke,BorderSizePixel=0,Parent=footer})
-	local footerText=textRole(label(footer,config.Footer or ("andromedaLib | v"..Andromeda.Version.." | @7doko"),UDim2.fromScale(1,1),theme.Muted),"Muted")
+	local footerText=textRole(label(footer,"andromedaLib | v"..Andromeda.Version.." | @7doko",UDim2.fromScale(1,1),theme.Muted),"Muted")
 	footerText.TextXAlignment=Enum.TextXAlignment.Center;footerText.TextSize=11
 
 	local resizeGrip=iconButton(footer,"Resize",UDim2.fromOffset(18,18),UDim2.new(1,-20,0,1),"//")
