@@ -6,7 +6,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Andromeda = {
-	Version = "2.0.2",
+	Version = "2.0.3",
 	Flags = {},
 	Windows = {},
 	IconBaseUrl = "https://raw.githubusercontent.com/7doko/andromeda/main/assets/icons/",
@@ -389,7 +389,7 @@ function Andromeda:CreateWindow(config)
 		BackgroundColor3=theme.Element,BorderSizePixel=0,Parent=topbar,
 	}),"Element")
 	corner(search,4)
-	role(make("UIStroke",{Color=theme.Stroke,Transparency=.35,Parent=search}),"Stroke","Color")
+	local searchStroke=role(make("UIStroke",{Color=theme.Stroke,Transparency=.35,Parent=search}),"Stroke","Color")
 	if iconSource("Search")~="" then
 		role(make("ImageLabel",{
 			Name="SearchIcon",Size=UDim2.fromOffset(18,18),Position=UDim2.fromOffset(8,8),BackgroundTransparency=1,
@@ -472,6 +472,31 @@ function Andromeda:CreateWindow(config)
 		if not settings.Muted then sound:Play() end
 	end
 
+	local function bindHover(target,onEnter,onLeave,withSound)
+		target.Active=true
+		table.insert(connections,target.MouseEnter:Connect(function()
+			if withSound~=false then play(hoverSound) end
+			if onEnter then onEnter() end
+		end))
+		table.insert(connections,target.MouseLeave:Connect(function() if onLeave then onLeave() end end))
+	end
+
+	local function tweenVisual(object,color,duration)
+		if object:IsA("ImageLabel") or object:IsA("ImageButton") then
+			tween(object,{ImageColor3=color},duration)
+		else
+			tween(object,{TextColor3=color},duration)
+		end
+	end
+
+	bindHover(search,function()
+		tween(searchStroke,{Color=theme.Accent,Transparency=.05},.12)
+		tween(searchBox,{TextColor3=theme.Text,PlaceholderColor3=theme.Text},.12)
+	end,function()
+		tween(searchStroke,{Color=theme.Stroke,Transparency=.35},.12)
+		tween(searchBox,{TextColor3=theme.Text,PlaceholderColor3=theme.Muted},.12)
+	end)
+
 	local function fire(options,...)
 		safeCallback(options and options.Callback,...)
 		local notice=options and (options.Notification or options.Notify)
@@ -488,7 +513,6 @@ function Andromeda:CreateWindow(config)
 			tooltip.Position=UDim2.fromOffset(x,y)
 		end
 		table.insert(connections,object.MouseEnter:Connect(function()
-			play(hoverSound)
 			if settings.Tooltips then
 				tooltipText.Text=tostring(description);placeTooltip(UserInputService:GetMouseLocation());tooltip.Visible=true
 			end
@@ -636,7 +660,16 @@ function Andromeda:CreateWindow(config)
 			TextSize=11,Font=Enum.Font.Code,ZIndex=4,Parent=parent,
 		}),"Panel"),"Text")
 		corner(button,3);local buttonStroke=role(make("UIStroke",{Color=theme.Accent,Thickness=1,Transparency=.4,Parent=button}),"Accent","Color")
+		local buttonScale=make("UIScale",{Scale=1,Parent=button})
 		fitSingleLine(button,8,11)
+		bindHover(button,function()
+			tween(button,{BackgroundColor3=theme.Element,TextColor3=theme.Text},.12)
+			tween(buttonStroke,{Transparency=0},.12);tween(buttonScale,{Scale=1.06},.12)
+		end,function()
+			tween(button,{BackgroundColor3=theme.Panel,TextColor3=theme.Text},.12)
+			if listeningBind~=bind then tween(buttonStroke,{Transparency=.4},.12) end
+			tween(buttonScale,{Scale=1},.12)
+		end)
 		function bind:SetKey(nextKey)
 			self.Key=toKeyCode(nextKey);button.Text=self.Key and self.Key.Name or "..."
 			buttonStroke:SetAttribute("AndromedaRole","Accent");buttonStroke.Color=theme.Accent;buttonStroke.Transparency=.4
@@ -688,12 +721,18 @@ function Andromeda:CreateWindow(config)
 
 		function api:CreateButton(options)
 			options=options or {};local object=row(options.Name or "Button",34);local hasKeybind=options.CurrentKeybind~=nil or options.Keybind~=nil
+			local hovering=false
 			local button=textRole(role(make("TextButton",{
 				Size=UDim2.new(1,hasKeybind and -64 or -12,0,26),Position=UDim2.fromOffset(6,4),BackgroundColor3=theme.Element,BorderSizePixel=0,
 				AutoButtonColor=false,Text=options.Name or "Button",TextColor3=theme.Muted,TextSize=13,Font=Enum.Font.Code,Parent=object,
 			}),"Element"),"Muted")
-			corner(button,3);role(make("UIStroke",{Color=theme.Stroke,Thickness=1,Transparency=.15,Parent=button}),"Stroke","Color");fitSingleLine(button,9,13)
-			local function press() play(clickSound);tween(button,{TextColor3=theme.Text,BackgroundColor3=theme.Accent},.08);task.delay(.1,function() if button.Parent then tween(button,{TextColor3=theme.Muted,BackgroundColor3=theme.Element},.12) end end);fire(options) end
+			corner(button,3);local buttonStroke=role(make("UIStroke",{Color=theme.Stroke,Thickness=1,Transparency=.15,Parent=button}),"Stroke","Color");fitSingleLine(button,9,13)
+			bindHover(button,function()
+				hovering=true;tween(button,{TextColor3=theme.Text},.12);tween(buttonStroke,{Color=theme.Accent,Transparency=.25},.12)
+			end,function()
+				hovering=false;tween(button,{TextColor3=theme.Muted},.12);tween(buttonStroke,{Color=theme.Stroke,Transparency=.15},.12)
+			end)
+			local function press() play(clickSound);tween(button,{TextColor3=theme.Text,BackgroundColor3=theme.Accent},.08);task.delay(.1,function() if button.Parent then tween(button,{TextColor3=hovering and theme.Text or theme.Muted,BackgroundColor3=theme.Element},.12) end end);fire(options) end
 			table.insert(connections,button.MouseButton1Click:Connect(press));attachTooltip(button,options.Description or options.Tooltip)
 			local control={Instance=object,Fire=press,Set=function(_,value) button.Text=tostring(value) end}
 			if hasKeybind then local bind=addKeybind(object,press,options);control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end end
@@ -715,6 +754,7 @@ function Andromeda:CreateWindow(config)
 			local function toggle() play(clickSound);control:Set(not value) end
 			local hit=make("TextButton",{Size=UDim2.new(1,-95,1,0),BackgroundTransparency=1,Text="",Parent=object});table.insert(connections,hit.MouseButton1Click:Connect(toggle))
 			local switchHit=make("TextButton",{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text="",ZIndex=2,Parent=track});table.insert(connections,switchHit.MouseButton1Click:Connect(toggle))
+			bindHover(object,function() tween(name,{TextColor3=theme.Accent},.12) end,function() tween(name,{TextColor3=theme.Text},.12) end)
 			if options.CurrentKeybind or options.Keybind then local bind=addKeybind(object,toggle,options);control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end;track.Position=UDim2.new(1,-94,.5,-10);hit.Size=UDim2.new(1,-102,1,0);name.Size=UDim2.new(1,-108,1,0) end
 			if options.Flag then Andromeda.Flags[options.Flag]=value end;attachTooltip(object,options.Description or options.Tooltip);registerControl(api,object,options);return control
 		end
@@ -742,10 +782,16 @@ function Andromeda:CreateWindow(config)
 				resetButton.Name="ResetButton";resetButton.BackgroundTransparency=0;resetButton.BackgroundColor3=theme.Panel;role(resetButton,"Panel")
 				corner(resetButton,3);role(make("UIStroke",{Color=theme.Stroke,Thickness=1,Transparency=.25,Parent=resetButton}),"Stroke","Color")
 				if resetButton:IsA("TextButton") then resetButton.TextSize=10 end
+				bindHover(resetButton,function()
+					tweenIcon(resetButton,theme.Text);tween(resetButton,{BackgroundColor3=theme.Element},.12)
+				end,function()
+					tweenIcon(resetButton,theme.Muted);tween(resetButton,{BackgroundColor3=theme.Panel},.12)
+				end)
 				table.insert(connections,resetButton.MouseButton1Click:Connect(function() play(clickSound);control:Reset() end))
 				attachTooltip(resetButton,"Reset "..tostring(options.Name or "slider").." to its default value")
 			end
 			local sliding=false
+			bindHover(object,function() tween(name,{TextColor3=theme.Accent},.12) end,function() tween(name,{TextColor3=theme.Text},.12) end)
 			local function update(input)
 				local ratio=math.clamp((input.Position.X-bar.AbsolutePosition.X)/math.max(bar.AbsoluteSize.X,1),0,1);play(sliderSound);control:Set(minimum+(maximum-minimum)*ratio)
 			end
@@ -761,7 +807,12 @@ function Andromeda:CreateWindow(config)
 			local box=textRole(role(make("TextBox",{Size=UDim2.new(1,-14,0,24),Position=UDim2.fromOffset(7,24),BackgroundColor3=theme.Element,BorderSizePixel=0,
 				ClearTextOnFocus=false,PlaceholderText=options.PlaceholderText or "Enter text",PlaceholderColor3=theme.Muted,Text=options.CurrentValue or options.Default or "",
 				TextColor3=theme.Text,TextSize=12,Font=Enum.Font.Code,TextXAlignment=Enum.TextXAlignment.Left,Parent=object}),"Element"),"Text")
-			corner(box,2);padding(box,0,7,0,7);role(make("UIStroke",{Color=theme.Stroke,Transparency=.4,Parent=box}),"Stroke","Color")
+			corner(box,2);padding(box,0,7,0,7);local boxStroke=role(make("UIStroke",{Color=theme.Stroke,Transparency=.4,Parent=box}),"Stroke","Color")
+			bindHover(box,function()
+				tween(name,{TextColor3=theme.Accent},.12);tween(boxStroke,{Color=theme.Accent,Transparency=.1},.12)
+			end,function()
+				tween(name,{TextColor3=theme.Text},.12);tween(boxStroke,{Color=theme.Stroke,Transparency=.4},.12)
+			end)
 			if options.Flag then Andromeda.Flags[options.Flag]=box.Text end
 			table.insert(connections,box.FocusLost:Connect(function(enter) if options.Flag then Andromeda.Flags[options.Flag]=box.Text end;fire(options,box.Text,enter);if options.RemoveTextAfterFocusLost then box.Text="" end end))
 			local control={Instance=object,Get=function() return box.Text end,Set=function(_,nextValue) box.Text=tostring(nextValue) end};attachTooltip(object,options.Description or options.Tooltip);registerControl(api,object,options);return control
@@ -772,7 +823,7 @@ function Andromeda:CreateWindow(config)
 			if multiple then for _,choice in ipairs(type(current)=="table" and current or {}) do selected[choice]=true end elseif type(current)=="table" then current=current[1] end
 			current=current or choices[1];local object=row(options.Name or (multiple and "Multi dropdown" or "Dropdown"),54);object.ClipsDescendants=true
 			local name=textRole(label(object,options.Name or "Dropdown",UDim2.new(1,-14,0,22),theme.Text),"Text");name.Position=UDim2.fromOffset(7,0);name.TextSize=13;fitSingleLine(name,9,13)
-			local selector=role(make("Frame",{Size=UDim2.new(1,-14,0,24),Position=UDim2.fromOffset(7,24),BackgroundColor3=theme.Element,BorderSizePixel=0,Parent=object}),"Element");corner(selector,2);role(make("UIStroke",{Color=theme.Stroke,Transparency=.4,Parent=selector}),"Stroke","Color")
+			local selector=role(make("Frame",{Size=UDim2.new(1,-14,0,24),Position=UDim2.fromOffset(7,24),BackgroundColor3=theme.Element,BorderSizePixel=0,Parent=object}),"Element");corner(selector,2);local selectorStroke=role(make("UIStroke",{Color=theme.Stroke,Transparency=.4,Parent=selector}),"Stroke","Color")
 			local valueLabel=textRole(label(selector,"",UDim2.new(1,-34,1,0),theme.Muted),"Muted");valueLabel.Position=UDim2.fromOffset(7,0);valueLabel.TextSize=12;fitSingleLine(valueLabel,8,12)
 			local arrow=arrowVisual(selector,UDim2.fromOffset(16,16),UDim2.new(1,-23,0,4))
 			local holder=role(make("ScrollingFrame",{Size=UDim2.new(1,-14,0,0),Position=UDim2.fromOffset(7,51),BackgroundColor3=theme.Panel,BorderSizePixel=0,
@@ -787,8 +838,9 @@ function Andromeda:CreateWindow(config)
 				for _,choice in ipairs(choices) do
 					local button=textRole(role(make("TextButton",{Size=UDim2.new(1,-2,0,24),BackgroundColor3=theme.Panel,BorderSizePixel=0,AutoButtonColor=false,
 						Text=tostring(choice),TextColor3=theme.Muted,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,Font=Enum.Font.Code,ZIndex=21,Parent=holder}),"Panel"),"Muted")
-					padding(button,0,5,0,5);table.insert(buttons,button)
-					local function refresh() local active=multiple and selected[choice]==true;button:SetAttribute("AndromedaRole",active and "Accent" or "Panel");button:SetAttribute("AndromedaTextRole",active and "Text" or "Muted");button.BackgroundColor3=active and theme.Accent or theme.Panel;button.TextColor3=active and theme.Text or theme.Muted end
+					padding(button,0,5,0,5);table.insert(buttons,button);local hovering=false
+					local function refresh(animated) local active=multiple and selected[choice]==true;button:SetAttribute("AndromedaRole",active and "Accent" or "Panel");button:SetAttribute("AndromedaTextRole",active and "Text" or "Muted");local background=active and theme.Accent or (hovering and theme.Element or theme.Panel);local textColor=(active or hovering) and theme.Text or theme.Muted;if animated then tween(button,{BackgroundColor3=background,TextColor3=textColor},.12) else button.BackgroundColor3=background;button.TextColor3=textColor end end
+					bindHover(button,function() hovering=true;refresh(true) end,function() hovering=false;refresh(true) end)
 					table.insert(connections,button.MouseButton1Click:Connect(function() play(clickSound);if multiple then selected[choice]=not selected[choice] or nil;refresh();updateLabel();if options.Flag then Andromeda.Flags[options.Flag]=values() end;fire(options,values()) else current=choice;updateLabel();if options.Flag then Andromeda.Flags[options.Flag]=current end;fire(options,current);close() end end));refresh()
 				end
 				holder.CanvasSize=UDim2.fromOffset(0,#choices*25+6)
@@ -797,6 +849,11 @@ function Andromeda:CreateWindow(config)
 			function control:Set(nextValue,silent) if multiple then table.clear(selected);for _,choice in ipairs(type(nextValue)=="table" and nextValue or {nextValue}) do if table.find(choices,choice) then selected[choice]=true end end elseif table.find(choices,nextValue) then current=nextValue end;rebuild();updateLabel();if options.Flag then Andromeda.Flags[options.Flag]=control:Get() end;if not silent then fire(options,control:Get()) end end
 			function control:Refresh(nextChoices,keep) choices=clone(nextChoices or {});if not keep then current=choices[1];table.clear(selected) end;rebuild();updateLabel() end
 			local hit=make("TextButton",{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text="",Parent=selector,ZIndex=4})
+			bindHover(hit,function()
+				tween(valueLabel,{TextColor3=theme.Text},.12);tween(selectorStroke,{Color=theme.Accent,Transparency=.1},.12);tweenVisual(arrow,theme.Accent,.12)
+			end,function()
+				tween(valueLabel,{TextColor3=theme.Muted},.12);tween(selectorStroke,{Color=theme.Stroke,Transparency=.4},.12);tweenVisual(arrow,theme.Text,.12)
+			end)
 			table.insert(connections,hit.MouseButton1Click:Connect(function() play(clickSound);opened=not opened;holder.Visible=opened;setArrow(arrow,opened and "up" or "down");local height=math.min(#choices*25+6,170);holder.Size=UDim2.new(1,-14,0,opened and height or 0);object.Size=UDim2.new(1,0,0,opened and 55+height or 54) end))
 			rebuild();updateLabel();if options.Flag then Andromeda.Flags[options.Flag]=control:Get() end;attachTooltip(object,options.Description or options.Tooltip);registerControl(api,object,options);return control
 		end
@@ -896,6 +953,11 @@ function Andromeda:CreateWindow(config)
 			buildControls(sectionApi,body);table.insert(tab.Sections,sectionApi)
 			function sectionApi:SetCollapsed(value) self.Collapsed=value==true;body.Visible=not self.Collapsed;setArrow(arrow,self.Collapsed and "right" or "down") end
 			function sectionApi:Toggle() self:SetCollapsed(not self.Collapsed) end
+			bindHover(header,function()
+				tween(heading,{TextColor3=theme.Accent},.12);tweenVisual(arrow,theme.Accent,.12)
+			end,function()
+				tween(heading,{TextColor3=theme.Text},.12);tweenVisual(arrow,theme.Text,.12)
+			end)
 			table.insert(connections,header.MouseButton1Click:Connect(function() play(clickSound);sectionApi:Toggle() end))
 			sectionApi:SetCollapsed(sectionApi.Collapsed);return sectionApi
 		end
@@ -904,8 +966,12 @@ function Andromeda:CreateWindow(config)
 		buildControls(tab,left)
 		tab.AddSection=tab.CreateSection
 		table.insert(connections,button.MouseButton1Click:Connect(function() play(clickSound);select() end))
-		table.insert(connections,button.MouseEnter:Connect(function() if selectedTab~=tab then play(hoverSound);tween(button,{BackgroundColor3=theme.Element},.12) end end))
-		table.insert(connections,button.MouseLeave:Connect(function() if selectedTab~=tab then tween(button,{BackgroundColor3=theme.Background},.12) end end))
+		table.insert(connections,button.MouseEnter:Connect(function()
+			if selectedTab~=tab then play(hoverSound);tween(button,{BackgroundColor3=theme.Element},.12);tween(buttonText,{TextColor3=theme.Text},.12) end
+		end))
+		table.insert(connections,button.MouseLeave:Connect(function()
+			if selectedTab~=tab then tween(button,{BackgroundColor3=theme.Background},.12);tween(buttonText,{TextColor3=theme.Muted},.12) end
+		end))
 		table.insert(tabs,tab);sidebar.CanvasSize=UDim2.fromOffset(0,sidebarLayout.AbsoluteContentSize.Y+10)
 		if not selectedTab or (selectedTab.Internal and not tab.Internal) then select() end
 		return tab

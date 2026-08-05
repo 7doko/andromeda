@@ -66,7 +66,7 @@ local Andromeda = loadstring(game:HttpGet(
 ))()
 ```
 
-The current library uses a compact two-column layout with icon-ready sidebar tabs, top search, collapsible sections, independent column scrolling, bottom-right notifications, and window controls.
+The current library uses a compact two-column layout with icon-ready sidebar tabs, animated hover feedback, top search, collapsible sections, independent column scrolling, bottom-right notifications, and window controls.
 
 ```lua
 local Window = Andromeda:CreateWindow({Name = "My Hub"})
