@@ -146,7 +146,7 @@ Window:SetVisible(true)
 Window:Toggle()
 ```
 
-Opening a window activates a transparent modal input layer and continuously keeps the mouse unlocked and visible, including during shift lock. Closing it restores the previous mouse behavior.
+Opening a window keeps the mouse unlocked and visible, including during shift lock. The unlock sentinel does not cover the screen or consume world clicks, and holding right-click temporarily returns control to the Roblox camera. Closing the window restores the previous mouse behavior.
 
 ### Minimize and close
 

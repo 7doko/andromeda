@@ -7,7 +7,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Andromeda = {
-	Version = "2.0.7",
+	Version = "2.0.8",
 	Flags = {},
 	Windows = {},
 	CacheIcons = true,
@@ -352,8 +352,9 @@ function Andromeda:CreateWindow(config)
 	local parented=pcall(function() gui.Parent=guiParent end)
 	if not parented then gui.Parent=player.PlayerGui end
 	local modalCatcher=make("TextButton",{
-		Name="MenuInputUnlock",Size=UDim2.fromScale(1,1),BackgroundTransparency=1,BorderSizePixel=0,
-		AutoButtonColor=false,Text="",Active=true,Modal=true,Visible=false,Parent=gui,
+		Name="MenuInputUnlock",Size=UDim2.fromOffset(1,1),Position=UDim2.fromOffset(-100,-100),
+		BackgroundTransparency=1,BorderSizePixel=0,AutoButtonColor=false,Text="",Active=false,
+		Selectable=false,Modal=true,Visible=false,Parent=gui,
 	})
 	local windowSize=config.Size or UDim2.fromOffset(720,600)
 	local root=role(make("Frame",{
@@ -568,7 +569,14 @@ function Andromeda:CreateWindow(config)
 		pcall(function() UserInputService.OverrideMouseIconBehavior=Enum.OverrideMouseIconBehavior.ForceShow end)
 	end
 	table.insert(connections,RunService.RenderStepped:Connect(function()
-		if window.Visible then forceMouseUnlocked() end
+		if not window.Visible then return end
+		if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+			pcall(function()
+				UserInputService.OverrideMouseIconBehavior=savedOverrideMouseIconBehavior or Enum.OverrideMouseIconBehavior.None
+			end)
+		else
+			forceMouseUnlocked()
+		end
 	end))
 
 	function window:SetVisible(value)
