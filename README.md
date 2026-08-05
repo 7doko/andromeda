@@ -105,6 +105,8 @@ local Window = Andromeda:CreateWindow({
 | `Size` | UDim2 | `UDim2.fromOffset(720, 600)` | Window size. |
 | `Position` | UDim2 | `UDim2.fromScale(0.5, 0.5)` | Initial window position. |
 | `Scale` | number | `1` | Initial UI scale. |
+| `AutoFit` | boolean | `true` | Shrinks the window horizontally when needed so its left and right edges stay inside the viewport. |
+| `FitPadding` | number | `12` | Minimum viewport padding used by automatic horizontal fitting. |
 | `Shadow` | boolean or table | table | Set to `false` to disable the UIShadow, or provide custom shadow properties. |
 | `Footer` | string | `andromedaLib ...` | Text displayed in the window footer. |
 | `Icons` | table | empty IDs | Optional Roblox asset IDs that override the automatically cached icons. |

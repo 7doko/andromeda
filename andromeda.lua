@@ -6,7 +6,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Andromeda = {
-	Version = "2.0.1",
+	Version = "2.0.2",
 	Flags = {},
 	Windows = {},
 	IconBaseUrl = "https://raw.githubusercontent.com/7doko/andromeda/main/assets/icons/",
@@ -353,7 +353,22 @@ function Andromeda:CreateWindow(config)
 	}),"Background")
 	corner(root,4)
 	role(make("UIStroke",{Color=theme.Stroke,Thickness=1,Transparency=.1,Parent=root}),"Stroke","Color")
-	local uiScale=make("UIScale",{Scale=config.Scale or 1,Parent=root})
+	local requestedScale=math.clamp(tonumber(config.Scale) or 1,.55,1.4)
+	local uiScale=make("UIScale",{Scale=requestedScale,Parent=root})
+	local function fitWindowToViewport()
+		if config.AutoFit==false then uiScale.Scale=requestedScale return end
+		local camera=workspace.CurrentCamera
+		local viewport=camera and camera.ViewportSize or Vector2.new(1920,1080)
+		local baseWidth=root.AbsoluteSize.X/math.max(uiScale.Scale,.001)
+		if baseWidth<1 then baseWidth=math.max(windowSize.X.Offset,720) end
+		local fitPadding=math.max(tonumber(config.FitPadding) or 12,0)
+		local horizontalFit=(viewport.X-fitPadding*2)/baseWidth
+		uiScale.Scale=math.clamp(math.min(requestedScale,horizontalFit),.55,1.4)
+	end
+	task.defer(fitWindowToViewport)
+	if workspace.CurrentCamera then
+		table.insert(connections,workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitWindowToViewport))
+	end
 	local shadow=make("UIShadow",{
 		Name="Shadow",Enabled=config.Shadow~=false and shadowConfig.Enabled~=false,
 		BlurRadius=shadowConfig.BlurRadius or UDim.new(0,16),Color=shadowConfig.Color or Color3.new(0,0,0),
@@ -405,7 +420,7 @@ function Andromeda:CreateWindow(config)
 
 	local sidebar=role(make("ScrollingFrame",{
 		Name="Sidebar",Size=UDim2.new(0,205,1,-72),Position=UDim2.fromOffset(0,52),BackgroundColor3=theme.Background,
-		BorderSizePixel=0,ScrollBarThickness=2,ScrollBarImageColor3=theme.Accent,CanvasSize=UDim2.new(),Parent=root,
+		BorderSizePixel=0,ScrollBarThickness=0,VerticalScrollBarInset=Enum.ScrollBarInset.None,CanvasSize=UDim2.new(),Parent=root,
 	}),"Background")
 	padding(sidebar,4,0,4,0)
 	local sidebarLayout=make("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,Padding=UDim.new(0,1),Parent=sidebar})
@@ -527,7 +542,7 @@ function Andromeda:CreateWindow(config)
 	end
 	function window:Toggle() self:SetVisible(not self.Visible) end
 	function window:Close() self:SetVisible(false) end
-	function window:SetScale(value) uiScale.Scale=math.clamp(tonumber(value) or 1,.55,1.4) end
+	function window:SetScale(value) requestedScale=math.clamp(tonumber(value) or 1,.55,1.4);fitWindowToViewport() end
 	function window:SetShadow(values)
 		if type(values)=="boolean" then shadow.Enabled=values return end
 		local allowed={Enabled=true,BlurRadius=true,Color=true,Offset=true,Spread=true,Transparency=true,ZIndex=true}
@@ -761,7 +776,7 @@ function Andromeda:CreateWindow(config)
 			local valueLabel=textRole(label(selector,"",UDim2.new(1,-34,1,0),theme.Muted),"Muted");valueLabel.Position=UDim2.fromOffset(7,0);valueLabel.TextSize=12;fitSingleLine(valueLabel,8,12)
 			local arrow=arrowVisual(selector,UDim2.fromOffset(16,16),UDim2.new(1,-23,0,4))
 			local holder=role(make("ScrollingFrame",{Size=UDim2.new(1,-14,0,0),Position=UDim2.fromOffset(7,51),BackgroundColor3=theme.Panel,BorderSizePixel=0,
-				ScrollBarThickness=2,ScrollBarImageColor3=theme.Accent,CanvasSize=UDim2.new(),Visible=false,ZIndex=20,Parent=object}),"Panel")
+				ScrollBarThickness=0,VerticalScrollBarInset=Enum.ScrollBarInset.None,CanvasSize=UDim2.new(),Visible=false,ZIndex=20,Parent=object}),"Panel")
 			corner(holder,2);role(make("UIStroke",{Color=theme.Stroke,Parent=holder}),"Stroke","Color");padding(holder,3,3,3,3)
 			local holderLayout=make("UIListLayout",{Padding=UDim.new(0,1),Parent=holder});local opened=false;local buttons={};local control={Instance=object}
 			local function values() local result={} for _,choice in ipairs(choices) do if selected[choice] then table.insert(result,choice) end end return result end
@@ -835,15 +850,15 @@ function Andromeda:CreateWindow(config)
 		})
 		local left=make("ScrollingFrame",{
 			Name="Left",Size=UDim2.new(.5,-12,1,-16),Position=UDim2.fromOffset(8,8),BackgroundTransparency=1,BorderSizePixel=0,
-			ScrollBarThickness=2,ScrollBarImageColor3=theme.Accent,VerticalScrollBarInset=Enum.ScrollBarInset.ScrollBar,CanvasSize=UDim2.new(),Parent=page,
+			ScrollBarThickness=0,VerticalScrollBarInset=Enum.ScrollBarInset.None,CanvasSize=UDim2.new(),Parent=page,
 		})
 		local right=make("ScrollingFrame",{
 			Name="Right",Size=UDim2.new(.5,-12,1,-16),Position=UDim2.new(.5,4,0,8),BackgroundTransparency=1,BorderSizePixel=0,
-			ScrollBarThickness=2,ScrollBarImageColor3=theme.Accent,VerticalScrollBarInset=Enum.ScrollBarInset.ScrollBar,CanvasSize=UDim2.new(),Parent=page,
+			ScrollBarThickness=0,VerticalScrollBarInset=Enum.ScrollBarInset.None,CanvasSize=UDim2.new(),Parent=page,
 		})
 		local leftLayout=make("UIListLayout",{Padding=UDim.new(0,8),SortOrder=Enum.SortOrder.LayoutOrder,Parent=left})
 		local rightLayout=make("UIListLayout",{Padding=UDim.new(0,8),SortOrder=Enum.SortOrder.LayoutOrder,Parent=right})
-		padding(left,2,4,4,0);padding(right,2,4,4,0)
+		padding(left,2,4,4,4);padding(right,2,4,4,4)
 		tab.Page=page;tab.Left=left;tab.Right=right
 		local function refreshLeftCanvas() left.CanvasSize=UDim2.fromOffset(0,leftLayout.AbsoluteContentSize.Y+8) end
 		local function refreshRightCanvas() right.CanvasSize=UDim2.fromOffset(0,rightLayout.AbsoluteContentSize.Y+8) end
