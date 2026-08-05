@@ -7,7 +7,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Andromeda = {
-	Version = "2.0.4",
+	Version = "2.0.5",
 	Flags = {},
 	Windows = {},
 	IconBaseUrl = "https://raw.githubusercontent.com/7doko/andromeda/main/assets/icons/",
@@ -43,10 +43,6 @@ local Andromeda = {
 			Background=Color3.fromRGB(20,10,13),Panel=Color3.fromRGB(31,15,20),Element=Color3.fromRGB(46,23,29),
 			Accent=Color3.fromRGB(239,68,98),Text=Color3.fromRGB(255,237,241),Muted=Color3.fromRGB(186,137,147),Stroke=Color3.fromRGB(83,43,52),
 		},
-		emerald = {
-			Background=Color3.fromRGB(8,18,15),Panel=Color3.fromRGB(12,28,23),Element=Color3.fromRGB(19,42,34),
-			Accent=Color3.fromRGB(47,211,142),Text=Color3.fromRGB(232,255,246),Muted=Color3.fromRGB(126,177,157),Stroke=Color3.fromRGB(38,76,63),
-		},
 		ocean = {
 			Background=Color3.fromRGB(7,16,23),Panel=Color3.fromRGB(10,26,37),Element=Color3.fromRGB(16,39,54),
 			Accent=Color3.fromRGB(40,190,235),Text=Color3.fromRGB(230,249,255),Muted=Color3.fromRGB(124,169,184),Stroke=Color3.fromRGB(35,71,88),
@@ -74,10 +70,6 @@ local Andromeda = {
 		aurora = {
 			Background=Color3.fromRGB(5,17,23),Panel=Color3.fromRGB(8,28,33),Element=Color3.fromRGB(14,43,46),
 			Accent=Color3.fromRGB(94,242,181),Text=Color3.fromRGB(231,255,249),Muted=Color3.fromRGB(116,171,164),Stroke=Color3.fromRGB(29,76,75),
-		},
-		solarized = {
-			Background=Color3.fromRGB(0,43,54),Panel=Color3.fromRGB(7,54,66),Element=Color3.fromRGB(12,66,78),
-			Accent=Color3.fromRGB(181,137,0),Text=Color3.fromRGB(238,232,213),Muted=Color3.fromRGB(131,148,150),Stroke=Color3.fromRGB(42,86,97),
 		},
 		paper = {
 			Background=Color3.fromRGB(241,238,244),Panel=Color3.fromRGB(229,224,234),Element=Color3.fromRGB(214,207,222),

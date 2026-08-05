@@ -241,7 +241,7 @@ Window:SetTheme({
 To change every open Andromeda window:
 
 ```lua
-Andromeda:SetTheme("emerald")
+Andromeda:SetTheme("aurora")
 ```
 
 ### ClearKeybinds
@@ -677,7 +677,6 @@ Built-in themes:
 - `midnight`
 - `amethyst`
 - `crimson`
-- `emerald`
 - `ocean`
 - `sunset`
 - `rose`
@@ -685,7 +684,6 @@ Built-in themes:
 - `monochrome`
 - `coffee`
 - `aurora`
-- `solarized`
 - `paper`
 
 Add your own named theme:
