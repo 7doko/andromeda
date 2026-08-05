@@ -3,7 +3,7 @@ local Andromeda = loadstring(game:HttpGet(
 ))()
 
 local Window = Andromeda:CreateWindow({
-	Name = "ANDROMEDA | UI LIBRARY",
+	Name = "ANDROMEDA | V2",
 	ThemeName = "andromeda",
 	Footer = "andromeda redesign | preview | @7doko",
 })

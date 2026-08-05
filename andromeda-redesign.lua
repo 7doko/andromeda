@@ -104,6 +104,7 @@ function Andromeda:CreateWindow(config)
 
 	local themeName=config.ThemeName or "andromeda"
 	local theme=merge(self.Themes[themeName] or self.Themes.andromeda,config.Theme)
+	local shadowConfig=type(config.Shadow)=="table" and config.Shadow or {}
 	local connections,tabs,keybinds={},{},{}
 	local selectedTab,listeningBind
 	local savedMouseBehavior,savedMouseIconEnabled
@@ -125,6 +126,12 @@ function Andromeda:CreateWindow(config)
 	corner(root,4)
 	role(make("UIStroke",{Color=theme.Stroke,Thickness=1,Transparency=.1,Parent=root}),"Stroke","Color")
 	local uiScale=make("UIScale",{Scale=config.Scale or 1,Parent=root})
+	local shadow=make("UIShadow",{
+		Name="Shadow",Enabled=config.Shadow~=false and shadowConfig.Enabled~=false,
+		BlurRadius=shadowConfig.BlurRadius or UDim.new(0,16),Color=shadowConfig.Color or Color3.new(0,0,0),
+		Offset=shadowConfig.Offset or UDim2.fromOffset(0,6),Spread=shadowConfig.Spread or UDim2.fromOffset(5,5),
+		Transparency=math.clamp(tonumber(shadowConfig.Transparency) or .45,0,1),ZIndex=-1,Parent=root,
+	})
 
 	local topbar=role(make("Frame",{
 		Name="Topbar",Size=UDim2.new(1,0,0,52),BackgroundColor3=theme.Background,BorderSizePixel=0,Parent=root,
@@ -135,13 +142,21 @@ function Andromeda:CreateWindow(config)
 	title.Position=UDim2.fromOffset(16,0);title.TextSize=17
 
 	local search=role(make("Frame",{
-		Name="Search",Size=UDim2.new(1,-270,0,34),Position=UDim2.fromOffset(212,8),
+		Name="Search",Size=UDim2.new(1,-312,0,34),Position=UDim2.fromOffset(212,8),
 		BackgroundColor3=theme.Element,BorderSizePixel=0,Parent=topbar,
 	}),"Element")
 	corner(search,4)
 	role(make("UIStroke",{Color=theme.Stroke,Transparency=.35,Parent=search}),"Stroke","Color")
-	local searchIcon=textRole(label(search,"Q",UDim2.fromOffset(28,34),theme.Muted),"Muted")
-	searchIcon.TextXAlignment=Enum.TextXAlignment.Center;searchIcon.TextSize=16
+	local searchIcon=make("Frame",{
+		Name="SearchIcon",Size=UDim2.fromOffset(13,13),Position=UDim2.fromOffset(10,9),
+		BackgroundTransparency=1,BorderSizePixel=0,Parent=search,
+	})
+	corner(searchIcon,7)
+	role(make("UIStroke",{Color=theme.Muted,Thickness=2,Parent=searchIcon}),"Muted","Color")
+	role(make("Frame",{
+		Name="Handle",Size=UDim2.fromOffset(6,2),Position=UDim2.fromOffset(10,11),Rotation=45,
+		BackgroundColor3=theme.Muted,BorderSizePixel=0,Parent=searchIcon,
+	}),"Muted")
 	local searchBox=textRole(make("TextBox",{
 		Name="SearchBox",Size=UDim2.new(1,-34,1,0),Position=UDim2.fromOffset(32,0),BackgroundTransparency=1,
 		ClearTextOnFocus=false,PlaceholderText="Search",PlaceholderColor3=theme.Muted,Text="",TextColor3=theme.Text,
@@ -149,8 +164,16 @@ function Andromeda:CreateWindow(config)
 	}),"Text")
 
 	local dragButton=textRole(make("TextButton",{
-		Name="Drag",Size=UDim2.fromOffset(48,52),Position=UDim2.new(1,-48,0,0),BackgroundTransparency=1,
+		Name="Drag",Size=UDim2.fromOffset(34,52),Position=UDim2.new(1,-34,0,0),BackgroundTransparency=1,
 		AutoButtonColor=false,Text="+",TextColor3=theme.Muted,TextSize=28,Font=Enum.Font.Code,Parent=topbar,
+	}),"Muted")
+	local closeButton=textRole(make("TextButton",{
+		Name="Close",Size=UDim2.fromOffset(26,32),Position=UDim2.new(1,-62,0,10),BackgroundTransparency=1,
+		AutoButtonColor=false,Text="x",TextColor3=theme.Muted,TextSize=16,Font=Enum.Font.Code,Parent=topbar,
+	}),"Muted")
+	local minimizeButton=textRole(make("TextButton",{
+		Name="Minimize",Size=UDim2.fromOffset(26,32),Position=UDim2.new(1,-88,0,10),BackgroundTransparency=1,
+		AutoButtonColor=false,Text="-",TextColor3=theme.Muted,TextSize=18,Font=Enum.Font.Code,Parent=topbar,
 	}),"Muted")
 
 	local sidebar=role(make("ScrollingFrame",{
@@ -201,7 +224,8 @@ function Andromeda:CreateWindow(config)
 
 	local window={
 		Gui=gui,Main=root,Theme=theme,Tabs=tabs,Connections=connections,Keybinds=keybinds,
-		Visible=false,Minimized=false,Settings=settings,SearchBox=searchBox,
+		Visible=false,Minimized=false,Settings=settings,SearchBox=searchBox,Shadow=shadow,
+		DragButton=dragButton,MinimizeButton=minimizeButton,CloseButton=closeButton,
 	}
 
 	local function play(sound)
@@ -266,6 +290,11 @@ function Andromeda:CreateWindow(config)
 	function window:Toggle() self:SetVisible(not self.Visible) end
 	function window:Close() self:SetVisible(false) end
 	function window:SetScale(value) uiScale.Scale=math.clamp(tonumber(value) or 1,.55,1.4) end
+	function window:SetShadow(values)
+		if type(values)=="boolean" then shadow.Enabled=values return end
+		local allowed={Enabled=true,BlurRadius=true,Color=true,Offset=true,Spread=true,Transparency=true,ZIndex=true}
+		for property,value in pairs(values or {}) do if allowed[property] then pcall(function() shadow[property]=value end) end end
+	end
 	function window:SetMinimized(value)
 		local minimized=value==true
 		if minimized==self.Minimized then return end
@@ -280,6 +309,12 @@ function Andromeda:CreateWindow(config)
 		self.Minimized=minimized;sidebar.Visible=not minimized;content.Visible=not minimized
 	end
 	function window:ToggleMinimized() self:SetMinimized(not self.Minimized) end
+	table.insert(connections,minimizeButton.MouseButton1Click:Connect(function() play(clickSound);window:ToggleMinimized() end))
+	table.insert(connections,closeButton.MouseButton1Click:Connect(function() play(clickSound);window:Close() end))
+	for _,button in ipairs({minimizeButton,closeButton}) do
+		table.insert(connections,button.MouseEnter:Connect(function() play(hoverSound);tween(button,{TextColor3=theme.Accent},.12) end))
+		table.insert(connections,button.MouseLeave:Connect(function() tween(button,{TextColor3=theme.Muted},.12) end))
+	end
 	function window:SetTheme(nextTheme)
 		if type(nextTheme)=="string" then
 			theme=merge(Andromeda.Themes[nextTheme] or Andromeda.Themes.andromeda)
@@ -322,14 +357,15 @@ function Andromeda:CreateWindow(config)
 		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging=false end
 	end))
 
-	local resizing,resizeStart,startSize=false,nil,nil
+	local resizing,resizeStart,startSize,resizePosition=false,nil,nil,nil
 	table.insert(connections,resizeGrip.InputBegan:Connect(function(input)
-		if input.UserInputType==Enum.UserInputType.MouseButton1 then resizing=true;resizeStart=input.Position;startSize=root.AbsoluteSize end
+		if input.UserInputType==Enum.UserInputType.MouseButton1 then resizing=true;resizeStart=input.Position;startSize=root.AbsoluteSize;resizePosition=root.Position end
 	end))
 	table.insert(connections,UserInputService.InputChanged:Connect(function(input)
 		if resizing and input.UserInputType==Enum.UserInputType.MouseMovement then
-			local delta=input.Position-resizeStart
-			root.Size=UDim2.fromOffset(math.max(620,startSize.X+delta.X),math.max(420,startSize.Y+delta.Y))
+			local delta=input.Position-resizeStart;local width=math.max(620,startSize.X+delta.X);local height=math.max(420,startSize.Y+delta.Y)
+			local applied=Vector2.new(width-startSize.X,height-startSize.Y);root.Size=UDim2.fromOffset(width,height)
+			root.Position=UDim2.new(resizePosition.X.Scale,resizePosition.X.Offset+applied.X/2,resizePosition.Y.Scale,resizePosition.Y.Offset+applied.Y/2)
 		end
 	end))
 	table.insert(connections,UserInputService.InputEnded:Connect(function(input)
@@ -400,7 +436,7 @@ function Andromeda:CreateWindow(config)
 			local function press() play(clickSound);tween(button,{TextColor3=theme.Text,BackgroundColor3=theme.Accent},.08);task.delay(.1,function() if button.Parent then tween(button,{TextColor3=theme.Muted,BackgroundColor3=theme.Element},.12) end end);fire(options) end
 			table.insert(connections,button.MouseButton1Click:Connect(press));attachTooltip(button,options.Description or options.Tooltip)
 			local control={Instance=object,Fire=press,Set=function(_,value) button.Text=tostring(value) end}
-			if options.CurrentKeybind or options.Keybind then local bind=addKeybind(object,press,options);setmetatable(control,{__index=bind}) end
+			if options.CurrentKeybind or options.Keybind then local bind=addKeybind(object,press,options);control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end end
 			registerControl(api,object,options);return control
 		end
 
@@ -419,7 +455,7 @@ function Andromeda:CreateWindow(config)
 			local function toggle() play(clickSound);control:Set(not value) end
 			local hit=make("TextButton",{Size=UDim2.new(1,-95,1,0),BackgroundTransparency=1,Text="",Parent=object});table.insert(connections,hit.MouseButton1Click:Connect(toggle))
 			local switchHit=make("TextButton",{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text="",ZIndex=2,Parent=track});table.insert(connections,switchHit.MouseButton1Click:Connect(toggle))
-			if options.CurrentKeybind or options.Keybind then local bind=addKeybind(object,toggle,options);control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end;track.Position=UDim2.new(1,-119,.5,-10) end
+			if options.CurrentKeybind or options.Keybind then local bind=addKeybind(object,toggle,options);control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end;track.Position=UDim2.new(1,-119,.5,-10);hit.Size=UDim2.new(1,-130,1,0) end
 			if options.Flag then Andromeda.Flags[options.Flag]=value end;attachTooltip(object,options.Description or options.Tooltip);registerControl(api,object,options);return control
 		end
 
@@ -500,14 +536,15 @@ function Andromeda:CreateWindow(config)
 
 		function api:CreateColorPicker(options)
 			options=options or {};local value=options.Color or options.CurrentColor or options.Default or Color3.new(1,1,1);local h,s,v=Color3.toHSV(value)
-			local object=row(options.Name or "Color picker",112);local name=textRole(label(object,options.Name or "Color picker",UDim2.new(1,-44,0,28),theme.Text),"Text");name.Position=UDim2.fromOffset(7,0);name.TextSize=13
+			local object=row(options.Name or "Color picker",150);local name=textRole(label(object,options.Name or "Color picker",UDim2.new(1,-44,0,28),theme.Text),"Text");name.Position=UDim2.fromOffset(7,0);name.TextSize=13
 			local preview=make("Frame",{Size=UDim2.fromOffset(20,20),Position=UDim2.new(1,-28,0,4),BackgroundColor3=value,BorderSizePixel=0,Parent=object});corner(preview,2);role(make("UIStroke",{Color=theme.Stroke,Parent=preview}),"Stroke","Color")
 			local control={Instance=object};local updating=false
 			local function changed() if updating then return end;value=Color3.fromHSV(h,s,v);preview.BackgroundColor3=value;if options.Flag then Andromeda.Flags[options.Flag]=value end;fire(options,value) end
 			local hue=api:CreateSlider({Name="Hue",Range={0,360},Increment=1,CurrentValue=h*360,Callback=function(x) h=x/360;changed() end});hue.Instance.Parent=object;hue.Instance.Position=UDim2.fromOffset(0,28);hue.Instance.Size=UDim2.new(1,0,0,38)
 			local sat=api:CreateSlider({Name="Saturation",Range={0,100},Increment=1,CurrentValue=s*100,Callback=function(x) s=x/100;changed() end});sat.Instance.Parent=object;sat.Instance.Position=UDim2.fromOffset(0,66);sat.Instance.Size=UDim2.new(1,0,0,38)
+			local bright=api:CreateSlider({Name="Brightness",Range={0,100},Increment=1,CurrentValue=v*100,Callback=function(x) v=x/100;changed() end});bright.Instance.Parent=object;bright.Instance.Position=UDim2.fromOffset(0,104);bright.Instance.Size=UDim2.new(1,0,0,38)
 			function control:Get() return value end
-			function control:Set(color,silent) value=color;h,s,v=Color3.toHSV(color);updating=true;hue:Set(h*360,true);sat:Set(s*100,true);updating=false;preview.BackgroundColor3=color;if options.Flag then Andromeda.Flags[options.Flag]=color end;if not silent then fire(options,color) end end
+			function control:Set(color,silent) value=color;h,s,v=Color3.toHSV(color);updating=true;hue:Set(h*360,true);sat:Set(s*100,true);bright:Set(v*100,true);updating=false;preview.BackgroundColor3=color;if options.Flag then Andromeda.Flags[options.Flag]=color end;if not silent then fire(options,color) end end
 			function control:Reset() control:Set(options.Color or options.CurrentColor or options.Default or Color3.new(1,1,1)) end
 			registerControl(api,object,options);return control
 		end
@@ -527,14 +564,14 @@ function Andromeda:CreateWindow(config)
 		local tab={Name=tabConfig.Name or "Tab",Internal=tabConfig.Internal==true,Sections={},Controls={},NextSide="Left"}
 		local button=role(make("TextButton",{
 			Name=tab.Name,Size=UDim2.new(1,0,0,40),BackgroundColor3=theme.Background,BackgroundTransparency=0,
-			BorderSizePixel=0,AutoButtonColor=false,Text="",Parent=sidebar,
+			BorderSizePixel=0,AutoButtonColor=false,Text="",LayoutOrder=tab.Internal and 10000 or #tabs,Parent=sidebar,
 		}),"Background")
 		local iconHolder
 		if tabConfig.Icon and tostring(tabConfig.Icon)~="" then
 			iconHolder=role(make("ImageLabel",{Size=UDim2.fromOffset(20,20),Position=UDim2.fromOffset(14,10),BackgroundTransparency=1,
 				Image=tostring(tabConfig.Icon),ImageColor3=theme.Accent,Parent=button}),"Accent","ImageColor3")
 		else
-			iconHolder=textRole(label(button,"+",UDim2.fromOffset(30,40),theme.Accent),"Accent");iconHolder.Position=UDim2.fromOffset(5,0);iconHolder.TextXAlignment=Enum.TextXAlignment.Center;iconHolder.TextSize=20
+				iconHolder=textRole(label(button,tabConfig.IconText or string.upper(string.sub(tab.Name,1,1)),UDim2.fromOffset(30,40),theme.Accent),"Accent");iconHolder.Position=UDim2.fromOffset(5,0);iconHolder.TextXAlignment=Enum.TextXAlignment.Center;iconHolder.TextSize=14
 		end
 		local buttonText=textRole(label(button,tab.Name,UDim2.new(1,-48,1,0),theme.Muted),"Muted");buttonText.Position=UDim2.fromOffset(42,0);buttonText.TextSize=14
 		tab.Button=button;tab.ButtonText=buttonText
@@ -631,7 +668,7 @@ function Andromeda:CreateWindow(config)
 
 	table.insert(Andromeda.Windows,window);Andromeda.LastWindow=window
 	if config.SettingsTab~=false then
-		local settingsTab=window:CreateTab({Name=config.SettingsTabName or "UI Settings",Internal=true})
+		local settingsTab=window:CreateTab({Name=config.SettingsTabName or "UI Settings",IconText="*",Internal=true})
 		window.SettingsTab=settingsTab
 		local menu=settingsTab:CreateSection({Name="Menu",Side="Left"})
 		menu:CreateToggle({Name="Notifications",CurrentValue=true,Callback=function(value) settings.Notifications=value end})
@@ -646,11 +683,13 @@ function Andromeda:CreateWindow(config)
 		local themeNames={} for name in pairs(Andromeda.Themes) do table.insert(themeNames,name) end table.sort(themeNames)
 		appearance:CreateDropdown({Name="Theme",Options=themeNames,CurrentOption=themeName,Callback=function(value) window:SetTheme(value) end})
 		appearance:CreateColorPicker({Name="Accent color",Color=theme.Accent,Callback=function(value) window:SetTheme({Accent=value}) end})
+		local shadowSettings=settingsTab:CreateSection({Name="Shadow",Side="Right"})
+		shadowSettings:CreateToggle({Name="Shadow enabled",CurrentValue=shadow.Enabled,Callback=function(value) window:SetShadow(value) end})
+		shadowSettings:CreateColorPicker({Name="Shadow color",Color=shadow.Color,Callback=function(value) window:SetShadow({Color=value}) end})
 
 		local information=settingsTab:CreateSection({Name="Library",Side="Right"})
 		information:CreateLabel("Reusable Andromeda UI library")
 		information:CreateLabel("Version: "..Andromeda.Version)
-		information:CreateButton({Name="Test notification",Callback=function() window:Notify({Title="Andromeda",Content="Notification preview",Duration=3}) end})
 	end
 
 	window:SetVisible(true)
