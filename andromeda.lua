@@ -6,9 +6,16 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Andromeda = {
-	Version = "2.0.0",
+	Version = "2.0.1",
 	Flags = {},
 	Windows = {},
+	IconBaseUrl = "https://raw.githubusercontent.com/7doko/andromeda/main/assets/icons/",
+	IconFolder = "andromedaLib/icons",
+	IconFiles = {
+		Search = "search.png", Resize = "resize.png", Move = "move.png",
+		Minimize = "minimize.png", Maximize = "maximize.png", Close = "close.png",
+		Arrow = "arrow.png", Reset = "reset.png",
+	},
 	Icons = {
 		Search = "", Resize = "", Move = "", Minimize = "", Maximize = "",
 		Close = "", Arrow = "", Reset = "",
@@ -138,6 +145,107 @@ local function imageId(value)
 	return tostring(value or "")
 end
 
+local function executorEnvironment()
+	local environment
+	if type(getgenv)=="function" then
+		local ok,result=pcall(getgenv)
+		if ok and type(result)=="table" then environment=result end
+	end
+	return environment or _G
+end
+
+local function executorFunction(name)
+	local environment=executorEnvironment()
+	local value=rawget(environment,name) or rawget(_G,name)
+	return type(value)=="function" and value or nil
+end
+
+local function ensureExecutorFolder(path)
+	local createFolder=executorFunction("makefolder")
+	if not createFolder then return false end
+	local isFolder=executorFunction("isfolder")
+	local current=""
+	for part in string.gmatch(path,"[^/\\]+") do
+		current=current=="" and part or current.."/"..part
+		local exists=false
+		if isFolder then
+			local ok,result=pcall(isFolder,current)
+			exists=ok and result==true
+		end
+		if not exists then pcall(createFolder,current) end
+	end
+	return true
+end
+
+local executorIconCache={}
+local executorIconFailures={}
+
+local function executorIconSource(name,library,config)
+	if config.CacheIcons==false then return "" end
+	local assetLoader=executorFunction("getcustomasset") or executorFunction("getsynasset")
+	local writeFile=executorFunction("writefile")
+	if not assetLoader or not writeFile then return "" end
+
+	local fileName=library.IconFiles[name]
+	if not fileName then return "" end
+	local folder=tostring(config.IconFolder or library.IconFolder):gsub("[\\/]+$","")
+	local path=folder.."/"..fileName
+	if executorIconCache[path] then return executorIconCache[path] end
+	if executorIconFailures[path] then return "" end
+
+	local isFile=executorFunction("isfile")
+	local exists=false
+	if isFile then
+		local ok,result=pcall(isFile,path)
+		exists=ok and result==true
+	end
+
+	if not exists then
+		ensureExecutorFolder(folder)
+		local baseUrl=tostring(config.IconBaseUrl or library.IconBaseUrl):gsub("/*$","").."/"
+		local ok,data=pcall(function() return game:HttpGet(baseUrl..fileName) end)
+		if not ok or type(data)~="string" or #data<8 then
+			executorIconFailures[path]=true
+			warn("[andromedaLib] could not download icon:",name)
+			return ""
+		end
+		local wrote=pcall(writeFile,path,data)
+		if not wrote then
+			executorIconFailures[path]=true
+			warn("[andromedaLib] could not cache icon:",name)
+			return ""
+		end
+	end
+
+	local ok,asset=pcall(assetLoader,path)
+	if ok and type(asset)=="string" and asset~="" then
+		executorIconCache[path]=asset
+		return asset
+	end
+	executorIconFailures[path]=true
+	return ""
+end
+
+local function executorGuiParent()
+	local getHiddenUi=executorFunction("gethui")
+	if getHiddenUi then
+		local ok,parent=pcall(getHiddenUi)
+		if ok and typeof(parent)=="Instance" then return parent end
+	end
+	local ok,coreGui=pcall(game.GetService,game,"CoreGui")
+	if ok then return coreGui end
+end
+
+local function protectExecutorGui(gui)
+	local protect=executorFunction("protect_gui")
+	if not protect then
+		local environment=executorEnvironment()
+		local synapse=rawget(environment,"syn") or rawget(_G,"syn")
+		if type(synapse)=="table" and type(synapse.protect_gui)=="function" then protect=synapse.protect_gui end
+	end
+	if protect then pcall(protect,gui) end
+end
+
 local function safeCallback(callback,...)
 	if type(callback)~="function" then return end
 	local ok,err=pcall(callback,...)
@@ -168,11 +276,18 @@ function Andromeda:CreateWindow(config)
 	local savedMouseBehavior,savedMouseIconEnabled
 	local settings={Notifications=true,Tooltips=true,Muted=false,NotificationScale=1}
 	local guiName=config.GuiName or "andromedaLib"
-	local old=player.PlayerGui:FindFirstChild(guiName)
+	local guiParent=config.UseExecutorGui==false and player.PlayerGui or executorGuiParent() or player.PlayerGui
+	local old=guiParent:FindFirstChild(guiName)
 	if old then old:Destroy() end
+	if guiParent~=player.PlayerGui then
+		old=player.PlayerGui:FindFirstChild(guiName)
+		if old then old:Destroy() end
+	end
 
 	local function iconSource(name)
-		return imageId(icons[name])
+		local configured=imageId(icons[name])
+		if configured~="" then return configured end
+		return executorIconSource(name,self,config)
 	end
 
 	local function iconButton(parent,name,size,position,fallback)
@@ -222,9 +337,14 @@ function Andromeda:CreateWindow(config)
 	end
 
 	local gui=make("ScreenGui",{
-		Name=guiName,ResetOnSpawn=false,IgnoreGuiInset=true,DisplayOrder=config.DisplayOrder or 9999,
-		ZIndexBehavior=Enum.ZIndexBehavior.Sibling,Parent=player.PlayerGui,
+		Name=guiName,ResetOnSpawn=false,IgnoreGuiInset=true,DisplayOrder=config.DisplayOrder or 2147483647,
+		ZIndexBehavior=Enum.ZIndexBehavior.Sibling,
 	})
+	pcall(function() gui.ScreenInsets=Enum.ScreenInsets.None end)
+	pcall(function() gui.OnTopOfCoreBlur=true end)
+	protectExecutorGui(gui)
+	local parented=pcall(function() gui.Parent=guiParent end)
+	if not parented then gui.Parent=player.PlayerGui end
 	local windowSize=config.Size or UDim2.fromOffset(720,600)
 	local root=role(make("Frame",{
 		Name="Window",Size=windowSize,Position=config.Position or UDim2.fromScale(.5,.5),

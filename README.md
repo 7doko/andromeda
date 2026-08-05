@@ -101,13 +101,17 @@ local Window = Andromeda:CreateWindow({
 | `ThemeName` | string | `andromeda` | Name of a built-in theme. |
 | `Theme` | table | nil | Theme values that override the selected built-in theme. |
 | `GuiName` | string | `andromedaLib` | Name assigned to the generated ScreenGui. |
-| `DisplayOrder` | number | `9999` | ScreenGui display order. |
+| `DisplayOrder` | number | `2147483647` | ScreenGui display order. The default keeps Andromeda above Roblox CoreGui. |
 | `Size` | UDim2 | `UDim2.fromOffset(720, 600)` | Window size. |
 | `Position` | UDim2 | `UDim2.fromScale(0.5, 0.5)` | Initial window position. |
 | `Scale` | number | `1` | Initial UI scale. |
 | `Shadow` | boolean or table | table | Set to `false` to disable the UIShadow, or provide custom shadow properties. |
 | `Footer` | string | `andromedaLib ...` | Text displayed in the window footer. |
-| `Icons` | table | empty IDs | Optional Roblox asset IDs for the built-in icon set. |
+| `Icons` | table | empty IDs | Optional Roblox asset IDs that override the automatically cached icons. |
+| `CacheIcons` | boolean | `true` | Downloads missing icons into the executor workspace and loads them as custom assets. |
+| `IconFolder` | string | `andromedaLib/icons` | Executor workspace folder used for cached PNG icons. |
+| `IconBaseUrl` | string | repository assets URL | Remote directory used to download missing icons. |
+| `UseExecutorGui` | boolean | `true` | Parents the ScreenGui to `gethui()` when available so it renders above Roblox UI. |
 | `ToggleKey` | Enum.KeyCode | `K` | Key used by the built-in settings tab to show or hide the menu. |
 | `SettingsTab` | boolean | `true` | Whether the built-in settings tab is created. |
 | `SettingsTabName` | string | `UI Settings` | Name of the built-in settings tab. |
@@ -697,7 +701,17 @@ Window:SetTheme("custom")
 
 ## PNG icons
 
-The generated transparent 128×128 icons are stored in `assets/icons`: search, resize, move, minimize, maximize, close, arrow, and reset. Roblox UI objects require uploaded asset IDs, so upload the PNGs and configure the IDs once:
+The transparent 128×128 icons are stored in `assets/icons`: search, resize, move, minimize, maximize, close, arrow, and reset. By default, the library downloads missing files once into `andromedaLib/icons` inside the executor workspace and loads them with `getcustomasset` or `getsynasset`.
+
+No icon setup is needed when the executor supports `writefile` and custom assets. You can change the cache location per window:
+
+```lua
+local Window = Andromeda:CreateWindow({
+	IconFolder = "myHub/andromeda-icons",
+})
+```
+
+Uploaded Roblox asset IDs are still supported as overrides:
 
 ```lua
 Andromeda.Icons.Search = "rbxassetid://0"
@@ -710,7 +724,7 @@ Andromeda.Icons.Arrow = "rbxassetid://0"
 Andromeda.Icons.Reset = "rbxassetid://0"
 ```
 
-You can also pass the same fields through the `Icons` table in `CreateWindow`. Until IDs are supplied, compact text or drawn fallbacks are used.
+You can also pass the same fields through the `Icons` table in `CreateWindow`. If executor file APIs are unavailable and no IDs are supplied, compact text or drawn fallbacks are used.
 
 ## Built-in settings tab
 
