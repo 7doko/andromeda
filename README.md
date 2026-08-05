@@ -79,7 +79,6 @@ local Window = Andromeda:CreateWindow({
 	ThemeName = "andromeda",
 	ToggleKey = Enum.KeyCode.K,
 	Scale = 1,
-	SettingsTab = true,
 })
 ```
 
@@ -91,21 +90,14 @@ local Window = Andromeda:CreateWindow({
 | `ThemeName` | string | `andromeda` | Name of a built-in theme. |
 | `Theme` | table | nil | Theme values that override the selected built-in theme. |
 | `GuiName` | string | `andromedaLib` | Name assigned to the generated ScreenGui. |
-| `DisplayOrder` | number | `2147483647` | ScreenGui display order. The default keeps Andromeda above Roblox CoreGui. |
 | `Size` | UDim2 | `UDim2.fromOffset(720, 600)` | Window size. |
 | `Position` | UDim2 | `UDim2.fromScale(0.5, 0.5)` | Initial window position. |
 | `Scale` | number | `1` | Initial UI scale. |
 | `AutoFit` | boolean | `true` | Shrinks the window horizontally when needed so its left and right edges stay inside the viewport. |
 | `FitPadding` | number | `12` | Minimum viewport padding used by automatic horizontal fitting. |
 | `Shadow` | boolean or table | table | Set to `false` to disable the UIShadow, or provide custom shadow properties. |
-| `Icons` | table | empty IDs | Optional Roblox asset IDs that override the automatically cached icons. |
-| `CacheIcons` | boolean | `true` | Downloads missing icons into the executor workspace and loads them as custom assets. |
-| `IconFolder` | string | `andromedaLib/icons` | Executor workspace folder used for cached PNG icons. |
-| `IconBaseUrl` | string | repository assets URL | Remote directory used to download missing icons. |
 | `UseExecutorGui` | boolean | `true` | Parents the ScreenGui to `gethui()` when available so it renders above Roblox UI. |
 | `ToggleKey` | Enum.KeyCode | `K` | Key used by the built-in settings tab to show or hide the menu. |
-| `SettingsTab` | boolean | `true` | Whether the built-in settings tab is created. |
-| `SettingsTabName` | string | `UI Settings` | Name of the built-in settings tab. |
 
 Creating another window with the same `GuiName` destroys the previous ScreenGui with that name.
 
@@ -697,12 +689,11 @@ Window:SetTheme("custom")
 
 The transparent 128×128 icons are stored in `assets/icons`: search, resize, move, minimize, maximize, close, arrow, and reset. By default, the library downloads missing files once into `andromedaLib/icons` inside the executor workspace and loads them with `getcustomasset` or `getsynasset`.
 
-No icon setup is needed when the executor supports `writefile` and custom assets. You can change the cache location per window:
+No icon setup is needed when the executor supports `writefile` and custom assets. Icon behavior is configured at the library level, not through `CreateWindow`:
 
 ```lua
-local Window = Andromeda:CreateWindow({
-	IconFolder = "myHub/andromeda-icons",
-})
+Andromeda.IconFolder = "myHub/andromeda-icons"
+Andromeda.CacheIcons = true
 ```
 
 Uploaded Roblox asset IDs are still supported as overrides:
@@ -718,11 +709,11 @@ Andromeda.Icons.Arrow = "rbxassetid://0"
 Andromeda.Icons.Reset = "rbxassetid://0"
 ```
 
-You can also pass the same fields through the `Icons` table in `CreateWindow`. If executor file APIs are unavailable and no IDs are supplied, compact text or drawn fallbacks are used.
+If executor file APIs are unavailable and no IDs are supplied, compact text or drawn fallbacks are used.
 
 ## Built-in settings tab
 
-Unless `SettingsTab = false`, every window receives the built-in UI Settings tab:
+Every window always receives the built-in UI Settings tab:
 
 - **Menu**
   - Notifications toggle
@@ -740,18 +731,7 @@ Unless `SettingsTab = false`, every window receives the built-in UI Settings tab
 - **Library**
   - Library name and version
 
-The menu keybind can be changed, but it cannot be cleared.
-
-Create a window without the built-in settings tab:
-
-```lua
-local Window = Andromeda:CreateWindow({
-	Name = "Minimal window",
-	SettingsTab = false,
-})
-```
-
-When `SettingsTab = false`, the library does not create the automatic menu keybind. You can still call `Window:SetVisible()` or `Window:Toggle()`, or create your own keybind control.
+The menu keybind can be changed, but it cannot be cleared. The UI Settings tab cannot be disabled or renamed through window configuration.
 
 ## Search
 

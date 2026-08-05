@@ -7,9 +7,10 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Andromeda = {
-	Version = "2.0.6",
+	Version = "2.0.7",
 	Flags = {},
 	Windows = {},
+	CacheIcons = true,
 	IconBaseUrl = "https://raw.githubusercontent.com/7doko/andromeda/main/assets/icons/",
 	IconFolder = "andromedaLib/icons",
 	IconFiles = {
@@ -185,15 +186,15 @@ end
 local executorIconCache={}
 local executorIconFailures={}
 
-local function executorIconSource(name,library,config)
-	if config.CacheIcons==false then return "" end
+local function executorIconSource(name,library)
+	if library.CacheIcons==false then return "" end
 	local assetLoader=executorFunction("getcustomasset") or executorFunction("getsynasset")
 	local writeFile=executorFunction("writefile")
 	if not assetLoader or not writeFile then return "" end
 
 	local fileName=library.IconFiles[name]
 	if not fileName then return "" end
-	local folder=tostring(config.IconFolder or library.IconFolder):gsub("[\\/]+$","")
+	local folder=tostring(library.IconFolder):gsub("[\\/]+$","")
 	local path=folder.."/"..fileName
 	if executorIconCache[path] then return executorIconCache[path] end
 	if executorIconFailures[path] then return "" end
@@ -207,7 +208,7 @@ local function executorIconSource(name,library,config)
 
 	if not exists then
 		ensureExecutorFolder(folder)
-		local baseUrl=tostring(config.IconBaseUrl or library.IconBaseUrl):gsub("/*$","").."/"
+		local baseUrl=tostring(library.IconBaseUrl):gsub("/*$","").."/"
 		local ok,data=pcall(function() return game:HttpGet(baseUrl..fileName) end)
 		if not ok or type(data)~="string" or #data<8 then
 			executorIconFailures[path]=true
@@ -274,7 +275,7 @@ function Andromeda:CreateWindow(config)
 
 	local themeName=config.ThemeName or "andromeda"
 	local theme=merge(self.Themes[themeName] or self.Themes.andromeda,config.Theme)
-	local icons=merge(self.Icons,config.Icons)
+	local icons=self.Icons
 	local shadowConfig=type(config.Shadow)=="table" and config.Shadow or {}
 	local connections,tabs,keybinds={},{},{}
 	local selectedTab,listeningBind
@@ -292,7 +293,7 @@ function Andromeda:CreateWindow(config)
 	local function iconSource(name)
 		local configured=imageId(icons[name])
 		if configured~="" then return configured end
-		return executorIconSource(name,self,config)
+		return executorIconSource(name,self)
 	end
 
 	local function iconButton(parent,name,size,position,fallback)
@@ -342,7 +343,7 @@ function Andromeda:CreateWindow(config)
 	end
 
 	local gui=make("ScreenGui",{
-		Name=guiName,ResetOnSpawn=false,IgnoreGuiInset=true,DisplayOrder=config.DisplayOrder or 2147483647,
+		Name=guiName,ResetOnSpawn=false,IgnoreGuiInset=true,DisplayOrder=2147483647,
 		ZIndexBehavior=Enum.ZIndexBehavior.Sibling,
 	})
 	pcall(function() gui.ScreenInsets=Enum.ScreenInsets.None end)
@@ -1029,8 +1030,7 @@ function Andromeda:CreateWindow(config)
 	end))
 
 	table.insert(Andromeda.Windows,window);Andromeda.LastWindow=window
-	if config.SettingsTab~=false then
-		local settingsTab=window:CreateTab({Name=config.SettingsTabName or "UI Settings",IconText="*",Internal=true})
+		local settingsTab=window:CreateTab({Name="UI Settings",IconText="*",Internal=true})
 		window.SettingsTab=settingsTab
 		local menu=settingsTab:CreateSection({Name="Menu",Side="Left"})
 		menu:CreateToggle({Name="Notifications",CurrentValue=true,Callback=function(value) settings.Notifications=value end})
@@ -1052,7 +1052,6 @@ function Andromeda:CreateWindow(config)
 		local information=settingsTab:CreateSection({Name="Library",Side="Right"})
 		information:CreateLabel("Reusable Andromeda UI library")
 		information:CreateLabel("Version: "..Andromeda.Version)
-	end
 
 	window:SetVisible(true)
 	return window
