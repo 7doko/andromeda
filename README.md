@@ -23,8 +23,10 @@ local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7do
 - Flags for storing control values
 - Notifications and tooltips
 - Interface sounds and scaling
-- Window dragging from the header, side borders, and bottom border
+- Window dragging from the title or move control
+- Independent left and right column scrolling
 - Header minimize and close controls
+- Bottom-right resize control
 - Configurable menu keybind
 - Mouse cursor unlocking while the window is open
 
@@ -35,7 +37,6 @@ local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7do
 
 local Window = Andromeda:CreateWindow({
 	Name = "My Hub",
-	Subtitle = "made with Andromeda",
 	ThemeName = "andromeda",
 	ToggleKey = Enum.KeyCode.K,
 })
@@ -55,17 +56,17 @@ Features:CreateToggle({
 
 The loadstring returns the Andromeda API. The interface is created when you call `Andromeda:CreateWindow()`.
 
-## Redesign preview
+## Legacy version
 
-The original `andromeda.lua` remains available and unchanged. A separate reference-inspired redesign is available from:
+Version 2.0 is now the main `andromeda.lua`. The previous v1.0.2 library remains available as:
 
 ```lua
 local Andromeda = loadstring(game:HttpGet(
-	"https://raw.githubusercontent.com/7doko/andromeda/main/andromeda-redesign.lua"
+	"https://raw.githubusercontent.com/7doko/andromeda/main/andromeda-old.lua"
 ))()
 ```
 
-The redesign keeps the same reusable control API while adding a wider compact layout, icon-ready sidebar tabs, top search, collapsible two-column sections, stacked notifications, a resize grip, and compact minimize/close controls.
+The current library uses a compact two-column layout with icon-ready sidebar tabs, top search, collapsible sections, independent column scrolling, bottom-right notifications, and window controls.
 
 ```lua
 local Window = Andromeda:CreateWindow({Name = "My Hub"})
@@ -78,14 +79,13 @@ Left:CreateToggle({Name = "Example toggle"})
 Right:CreateSlider({Name = "Example slider", Range = {0, 100}})
 ```
 
-If `Side` is omitted, new sections alternate between the left and right columns. `Icon` accepts a Roblox image URI, while `IconText` supplies a text fallback. Section headers can be clicked to collapse or expand them. See `andromeda-redesign-showcase.lua` for every control type.
+If `Side` is omitted, new sections alternate between the left and right columns. `Icon` accepts a Roblox image URI, while `IconText` supplies a text fallback. Section headers can be clicked to collapse or expand them. See `andromeda-showcase.lua` for every control type.
 
 ## Creating a window
 
 ```lua
 local Window = Andromeda:CreateWindow({
 	Name = "My Hub",
-	Subtitle = "Utility interface",
 	ThemeName = "andromeda",
 	ToggleKey = Enum.KeyCode.K,
 	Scale = 1,
@@ -97,19 +97,20 @@ local Window = Andromeda:CreateWindow({
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `Name` | string | `andromeda v1.0.2` | Main window title. `Title` can also be used. |
-| `Subtitle` | string | `UI library` | Smaller text below the title. |
+| `Name` | string | `ANDROMEDA` | Main window title. `Title` can also be used. |
 | `ThemeName` | string | `andromeda` | Name of a built-in theme. |
 | `Theme` | table | nil | Theme values that override the selected built-in theme. |
 | `GuiName` | string | `andromedaLib` | Name assigned to the generated ScreenGui. |
 | `DisplayOrder` | number | `9999` | ScreenGui display order. |
-| `Size` | UDim2 | `UDim2.fromOffset(560, 360)` | Window size. |
+| `Size` | UDim2 | `UDim2.fromOffset(720, 600)` | Window size. |
 | `Position` | UDim2 | `UDim2.fromScale(0.5, 0.5)` | Initial window position. |
 | `Scale` | number | `1` | Initial UI scale. |
 | `Shadow` | boolean or table | table | Set to `false` to disable the UIShadow, or provide custom shadow properties. |
+| `Footer` | string | `andromedaLib ...` | Text displayed in the window footer. |
+| `Icons` | table | empty IDs | Optional Roblox asset IDs for the built-in icon set. |
 | `ToggleKey` | Enum.KeyCode | `K` | Key used by the built-in settings tab to show or hide the menu. |
 | `SettingsTab` | boolean | `true` | Whether the built-in settings tab is created. |
-| `SettingsTabName` | string | `Settings` | Name of the built-in settings tab. |
+| `SettingsTabName` | string | `UI Settings` | Name of the built-in settings tab. |
 
 Creating another window with the same `GuiName` destroys the previous ScreenGui with that name.
 
@@ -175,7 +176,7 @@ Window:Close()
 Window:SetScale(1.1)
 ```
 
-The value is clamped between `0.5` and `1.5`.
+The value is clamped between `0.55` and `1.4`.
 
 ### Shadow
 
@@ -214,7 +215,7 @@ The underlying instance is also available as `Window.Shadow`.
 ### SetTheme
 
 ```lua
-Window:SetTheme("azure")
+Window:SetTheme("midnight")
 ```
 
 You can also apply a custom theme table:
@@ -234,7 +235,7 @@ Window:SetTheme({
 To change every open Andromeda window:
 
 ```lua
-Andromeda:SetTheme("mint")
+Andromeda:SetTheme("emerald")
 ```
 
 ### ClearKeybinds
@@ -429,7 +430,7 @@ Toggle:ClearKey()
 
 ## Slider
 
-Sliders select a number within a range.
+Sliders select a number within a range. Their value text uses `current / maximum`, and every slider includes a reset button by default.
 
 ```lua
 local Slider = Main:CreateSlider({
@@ -438,6 +439,7 @@ local Slider = Main:CreateSlider({
 	Increment = 1,
 	CurrentValue = 16,
 	Suffix = " studs",
+	ResetButton = true,
 	Flag = "WalkSpeed",
 	Callback = function(value)
 		print("Speed:", value)
@@ -467,7 +469,7 @@ print(Slider:Get())
 Slider:Reset()
 ```
 
-The reset button inside the slider also restores its original value.
+The reset button inside the slider also restores its original value. Set `ResetButton = false` to hide it.
 
 ## Dropdown
 
@@ -666,17 +668,21 @@ Flag values use these types:
 Built-in themes:
 
 - `andromeda`
-- `amber`
-- `azure`
+- `midnight`
+- `amethyst`
 - `crimson`
+- `emerald`
+- `ocean`
+- `sunset`
 - `rose`
-- `mint`
-- `pearl`
+- `cyber`
+- `monochrome`
+- `coffee`
 
 Add your own named theme:
 
 ```lua
-Andromeda.Themes.ocean = {
+Andromeda.Themes.custom = {
 	Background = Color3.fromRGB(10, 18, 26),
 	Panel = Color3.fromRGB(15, 29, 40),
 	Element = Color3.fromRGB(23, 42, 56),
@@ -686,28 +692,45 @@ Andromeda.Themes.ocean = {
 	Stroke = Color3.fromRGB(38, 68, 88),
 }
 
-Window:SetTheme("ocean")
+Window:SetTheme("custom")
 ```
+
+## PNG icons
+
+The generated transparent 128×128 icons are stored in `assets/icons`: search, resize, move, minimize, maximize, close, arrow, and reset. Roblox UI objects require uploaded asset IDs, so upload the PNGs and configure the IDs once:
+
+```lua
+Andromeda.Icons.Search = "rbxassetid://0"
+Andromeda.Icons.Resize = "rbxassetid://0"
+Andromeda.Icons.Move = "rbxassetid://0"
+Andromeda.Icons.Minimize = "rbxassetid://0"
+Andromeda.Icons.Maximize = "rbxassetid://0"
+Andromeda.Icons.Close = "rbxassetid://0"
+Andromeda.Icons.Arrow = "rbxassetid://0"
+Andromeda.Icons.Reset = "rbxassetid://0"
+```
+
+You can also pass the same fields through the `Icons` table in `CreateWindow`. Until IDs are supplied, compact text or drawn fallbacks are used.
 
 ## Built-in settings tab
 
-Unless `SettingsTab = false`, every window receives the clean built-in Settings tab:
+Unless `SettingsTab = false`, every window receives the built-in UI Settings tab:
 
-- **Appearance**
+- **Menu**
+  - Notifications toggle
+  - Tooltips toggle
+  - Mute sounds toggle
+  - UI scale slider
+  - Menu keybind, using K by default
+  - Unload button
+- **Themes**
   - Theme dropdown
-  - Window scale slider
+  - Accent color picker
 - **Shadow**
   - Enabled toggle
   - Color picker
-- **Behavior**
-  - Notifications toggle
-  - Notification scale slider
-  - Tooltips toggle
-  - Mute interface sounds toggle
-  - Hide window button
-- **Menu**
-  - Menu keybind, using K by default
-  - Clear editable keybinds button
+- **Library**
+  - Library name and version
 
 The menu keybind can be changed, but it cannot be cleared.
 
@@ -765,7 +788,6 @@ local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7do
 
 local Window = Andromeda:CreateWindow({
 	Name = "Example Hub",
-	Subtitle = "Andromeda documentation example",
 	ThemeName = "andromeda",
 	ToggleKey = Enum.KeyCode.K,
 })

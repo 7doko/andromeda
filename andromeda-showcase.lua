@@ -1,11 +1,11 @@
 local Andromeda = loadstring(game:HttpGet(
-	"https://raw.githubusercontent.com/7doko/andromeda/main/andromeda-redesign.lua"
+	"https://raw.githubusercontent.com/7doko/andromeda/main/andromeda.lua"
 ))()
 
 local Window = Andromeda:CreateWindow({
 	Name = "ANDROMEDA | V2",
 	ThemeName = "andromeda",
-	Footer = "andromeda redesign | preview | @7doko",
+	Footer = "andromedaLib | v2.0.0 | @7doko",
 })
 
 local Controls = Window:CreateTab("Controls")
@@ -17,13 +17,14 @@ local Basic = Controls:CreateSection({Name="Basic controls",Side="Left"})
 Basic:CreateButton({
 	Name="Example button",
 	CurrentKeybind=Enum.KeyCode.B,
+	Description="Runs the button callback. The B keybind does the same thing.",
 	Callback=function() Window:Notify({Title="Button",Content="The example button was pressed"}) end,
 })
-Basic:CreateToggle({Name="Example toggle",CurrentValue=true,CurrentKeybind=Enum.KeyCode.T})
-Basic:CreateSlider({Name="Example slider",Range={0,100},Increment=1,CurrentValue=50,Suffix="%"})
+Basic:CreateToggle({Name="Example toggle",CurrentValue=true,CurrentKeybind=Enum.KeyCode.T,Description="Click the row, switch, or press T."})
+Basic:CreateSlider({Name="Example slider",Range={0,100},Increment=1,CurrentValue=50,Suffix="%",Description="Drag the bar or use the reset button."})
 
 local Text = Controls:CreateSection({Name="Text content",Side="Right"})
-local Status = Text:CreateLabel("Status: ready")
+local Status = Text:CreateLabel({Text="Status: ready - labels wrap instead of being replaced by an ellipsis.",TextWrapped=true})
 Text:CreateParagraph({Title="Paragraph",Content="Longer explanatory content can be placed inside compact sections."})
 Text:CreateButton({Name="Update label",Callback=function() Status:Set("Status: updated") end})
 
@@ -34,13 +35,13 @@ States:CreateKeybind({Name="Standalone keybind",CurrentKeybind=Enum.KeyCode.G,Ca
 
 local Single = Selection:CreateSection({Name="Dropdowns",Side="Left"})
 local Dropdown = Single:CreateDropdown({
-	Name="Single dropdown",Options={"Alpha","Beta","Gamma","Delta"},CurrentOption="Alpha",
+	Name="Single dropdown",Options={"Alpha","Beta","Gamma","Delta"},CurrentOption="Alpha",Description="Select one value from the list.",
 })
 Single:CreateButton({Name="Refresh dropdown",Callback=function() Dropdown:Refresh({"One","Two","Three"},false) end})
 
 local Multiple = Selection:CreateSection({Name="Multiple selection",Side="Right"})
 Multiple:CreateMultiDropdown({
-	Name="Multi dropdown",Options={"ESP","Chams","Tracers","Distance","Health"},CurrentOption={"ESP","Distance"},
+	Name="Multi dropdown",Options={"ESP","Chams","Tracers","Distance","Health"},CurrentOption={"ESP","Distance"},Description="Selected values use the current accent color.",
 })
 
 local Colors = Selection:CreateSection({Name="Colors",Side="Left"})
@@ -77,4 +78,4 @@ WindowApi:CreateButton({Name="Toggle window",Callback=function() Window:Toggle()
 WindowApi:CreateButton({Name="Minimize window",Callback=function() Window:ToggleMinimized() end})
 WindowApi:CreateButton({Name="Reset scale",Callback=function() Window:SetScale(1) end})
 
-Window:Notify({Title="Andromeda redesign",Content="Showcase loaded. Press K to toggle the menu.",Duration=4})
+Window:Notify({Title="Andromeda 2.0",Content="Showcase loaded. Press K to toggle the menu.",Duration=4})
