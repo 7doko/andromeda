@@ -55,6 +55,31 @@ Features:CreateToggle({
 
 The loadstring returns the Andromeda API. The interface is created when you call `Andromeda:CreateWindow()`.
 
+## Redesign preview
+
+The original `andromeda.lua` remains available and unchanged. A separate reference-inspired redesign is available from:
+
+```lua
+local Andromeda = loadstring(game:HttpGet(
+	"https://raw.githubusercontent.com/7doko/andromeda/main/andromeda-redesign.lua"
+))()
+```
+
+The redesign keeps the same reusable control API while adding a wider compact layout, icon-ready sidebar tabs, top search, collapsible two-column sections, stacked notifications, and a resize grip.
+
+```lua
+local Window = Andromeda:CreateWindow({Name = "My Hub"})
+local Main = Window:CreateTab("Main")
+
+local Left = Main:CreateSection({Name = "Player", Side = "Left"})
+local Right = Main:CreateSection({Name = "Visual", Side = "Right"})
+
+Left:CreateToggle({Name = "Example toggle"})
+Right:CreateSlider({Name = "Example slider", Range = {0, 100}})
+```
+
+If `Side` is omitted, new sections alternate between the left and right columns. Section headers can be clicked to collapse or expand them. See `andromeda-redesign-showcase.lua` for every control type.
+
 ## Creating a window
 
 ```lua
