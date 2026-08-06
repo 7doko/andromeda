@@ -5,14 +5,17 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 
 local Andromeda = {
-	Version = "2.0.8",
+	Version = "2.1.0",
 	Flags = {},
 	Windows = {},
 	CacheIcons = true,
 	IconBaseUrl = "https://raw.githubusercontent.com/7doko/andromeda/main/assets/icons/",
 	IconFolder = "andromedaLib/icons",
+	ThemeFile = "andromedaLib/themes.json",
+	BackgroundFolder = "andromedaLib/backgrounds",
 	IconFiles = {
 		Search = "search.png", Resize = "resize.png", Move = "move.png",
 		Minimize = "minimize.png", Maximize = "maximize.png", Close = "close.png",
@@ -78,6 +81,9 @@ local Andromeda = {
 		},
 	},
 }
+
+local builtInThemeNames={}
+for name in pairs(Andromeda.Themes) do builtInThemeNames[name]=true end
 
 local function clone(source)
 	local result = {}
@@ -268,12 +274,117 @@ local function formatNumber(value)
 	return string.format("%.2f",value):gsub("0+$",""):gsub("%.$","")
 end
 
+local themeColorKeys={"Background","Panel","Element","Accent","Text","Muted","Stroke"}
+
+local function colorToHex(color)
+	return string.format("#%02X%02X%02X",math.floor(color.R*255+.5),math.floor(color.G*255+.5),math.floor(color.B*255+.5))
+end
+
+local function hexToColor(value)
+	local hex=tostring(value or ""):gsub("#",""):gsub("%s","")
+	if #hex==3 then hex=hex:sub(1,1):rep(2)..hex:sub(2,2):rep(2)..hex:sub(3,3):rep(2) end
+	if #hex~=6 then return nil end
+	local number=tonumber(hex,16)
+	if not number then return nil end
+	return Color3.fromRGB(math.floor(number/65536)%256,math.floor(number/256)%256,number%256)
+end
+
+local function serializeTheme(source)
+	local result={}
+	for _,key in ipairs(themeColorKeys) do
+		if typeof(source[key])=="Color3" then result[key]=colorToHex(source[key]) end
+	end
+	result.BackgroundImage=tostring(source.BackgroundImage or "")
+	result.BackgroundImageTransparency=math.clamp(tonumber(source.BackgroundImageTransparency) or .18,0,1)
+	return result
+end
+
+local function deserializeTheme(source)
+	if type(source)~="table" then return nil end
+	local result={}
+	for _,key in ipairs(themeColorKeys) do
+		local color=hexToColor(source[key])
+		if color then result[key]=color end
+	end
+	result.BackgroundImage=tostring(source.BackgroundImage or "")
+	result.BackgroundImageTransparency=math.clamp(tonumber(source.BackgroundImageTransparency) or .18,0,1)
+	return result
+end
+
+local function loadThemeStore(path)
+	local readFile,isFile=executorFunction("readfile"),executorFunction("isfile")
+	if not readFile then return {themes={}} end
+	if isFile then
+		local ok,exists=pcall(isFile,path)
+		if not ok or not exists then return {themes={}} end
+	end
+	local ok,data=pcall(readFile,path)
+	if not ok or type(data)~="string" then return {themes={}} end
+	local decodedOk,decoded=pcall(HttpService.JSONDecode,HttpService,data)
+	if not decodedOk or type(decoded)~="table" then return {themes={}} end
+	decoded.themes=type(decoded.themes)=="table" and decoded.themes or {}
+	return decoded
+end
+
+local function saveThemeStore(path,store)
+	local writeFile=executorFunction("writefile")
+	if not writeFile then return false,"executor does not support writefile" end
+	local folder=path:match("^(.*)[/\\][^/\\]+$")
+	if folder and folder~="" then ensureExecutorFolder(folder) end
+	local ok,data=pcall(HttpService.JSONEncode,HttpService,store)
+	if not ok then return false,tostring(data) end
+	local wrote,err=pcall(writeFile,path,data)
+	return wrote,wrote and nil or tostring(err)
+end
+
+local function resolveCustomImage(value,folder)
+	if type(value)=="number" then return imageId(value) end
+	local source=tostring(value or ""):match("^%s*(.-)%s*$")
+	if source=="" then return "" end
+	if source:match("^%d+$") then return "rbxassetid://"..source end
+	if source:match("^rbxasset") or source:match("^rbxthumb") then return source end
+	local assetLoader=executorFunction("getcustomasset") or executorFunction("getsynasset")
+	local isFile=executorFunction("isfile")
+	if assetLoader and isFile then
+		local ok,exists=pcall(isFile,source)
+		if ok and exists then
+			local loaded,asset=pcall(assetLoader,source)
+			if loaded then return asset end
+		end
+	end
+	if not source:match("^https?://") then return source end
+	local writeFile=executorFunction("writefile")
+	if not writeFile or not assetLoader then return source end
+	local hash=7
+	for index=1,#source do hash=(hash*31+source:byte(index))%2147483647 end
+	local extension=source:lower():match("%.(png)") or source:lower():match("%.(jpe?g)") or source:lower():match("%.(webp)") or "png"
+	local path=tostring(folder):gsub("[\\/]+$","").."/"..tostring(hash).."."..extension
+	local exists=false
+	if isFile then local ok,result=pcall(isFile,path);exists=ok and result==true end
+	if not exists then
+		ensureExecutorFolder(folder)
+		local downloaded,data=pcall(function() return game:HttpGet(source) end)
+		if not downloaded or type(data)~="string" then return source end
+		if not pcall(writeFile,path,data) then return source end
+	end
+	local loaded,asset=pcall(assetLoader,path)
+	return loaded and asset or source
+end
+
 function Andromeda:CreateWindow(config)
 	config=config or {}
 	local player=Players.LocalPlayer
 	assert(player,"andromedaLib must run on the client")
 
-	local themeName=config.ThemeName or "andromeda"
+	local themeFile=tostring(config.ThemeFile or self.ThemeFile)
+	local themeStore=loadThemeStore(themeFile)
+	local customThemeNames={}
+	for name,data in pairs(themeStore.themes) do
+		local decoded=deserializeTheme(data)
+		if decoded and not builtInThemeNames[name] then self.Themes[name]=decoded;customThemeNames[name]=true end
+	end
+	local themeName=config.ThemeName or (config.Theme==nil and themeStore.default) or "andromeda"
+	if not self.Themes[themeName] then themeName="andromeda" end
 	local theme=merge(self.Themes[themeName] or self.Themes.andromeda,config.Theme)
 	local icons=self.Icons
 	local shadowConfig=type(config.Shadow)=="table" and config.Shadow or {}
@@ -357,9 +468,10 @@ function Andromeda:CreateWindow(config)
 		Selectable=false,Modal=true,Visible=false,Parent=gui,
 	})
 	local windowSize=config.Size or UDim2.fromOffset(720,600)
-	local root=role(make("Frame",{
+	local root=role(make("ImageLabel",{
 		Name="Window",Size=windowSize,Position=config.Position or UDim2.fromScale(.5,.5),
 		AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=theme.Background,BorderSizePixel=0,
+		Image="",ImageTransparency=1,ScaleType=Enum.ScaleType.Crop,
 		ClipsDescendants=false,ZIndex=2,Parent=gui,
 	}),"Background")
 	corner(root,4)
@@ -476,7 +588,8 @@ function Andromeda:CreateWindow(config)
 	local window={
 		Gui=gui,Main=root,Theme=theme,Tabs=tabs,Connections=connections,Keybinds=keybinds,
 		Visible=false,Minimized=false,Settings=settings,SearchBox=searchBox,Shadow=shadow,Icons=icons,
-		DragButton=dragButton,MinimizeButton=minimizeButton,CloseButton=closeButton,
+		DragButton=dragButton,MinimizeButton=minimizeButton,CloseButton=closeButton,ThemeName=themeName,
+		ThemeStore=themeStore,ThemeFile=themeFile,ThemePickers={},
 	}
 
 	local function play(sound)
@@ -601,6 +714,19 @@ function Andromeda:CreateWindow(config)
 		local allowed={Enabled=true,BlurRadius=true,Color=true,Offset=true,Spread=true,Transparency=true,ZIndex=true}
 		for property,value in pairs(values or {}) do if allowed[property] then pcall(function() shadow[property]=value end) end end
 	end
+	function window:SetBackgroundImage(source,options)
+		if type(source)=="table" then options=source;source=options.Image or options.Source or options.Url end
+		options=options or {}
+		source=tostring(source or "")
+		local transparency=math.clamp(tonumber(options.Transparency or options.ImageTransparency or theme.BackgroundImageTransparency) or .18,0,1)
+		local resolved=resolveCustomImage(source,Andromeda.BackgroundFolder)
+		root.Image=resolved
+		root.ImageTransparency=resolved=="" and 1 or transparency
+		for _,surface in ipairs({topbar,sidebar,content,footer}) do surface.BackgroundTransparency=resolved=="" and 0 or .12 end
+		self.BackgroundImageSource=source;self.BackgroundImageTransparency=transparency
+		theme.BackgroundImage=source;theme.BackgroundImageTransparency=transparency
+		return resolved
+	end
 	function window:SetMinimized(value)
 		local minimized=value==true
 		if minimized==self.Minimized then return end
@@ -625,6 +751,7 @@ function Andromeda:CreateWindow(config)
 	function window:SetTheme(nextTheme)
 		if type(nextTheme)=="string" then
 			theme=merge(Andromeda.Themes[nextTheme] or Andromeda.Themes.andromeda)
+			self.ThemeName=Andromeda.Themes[nextTheme] and nextTheme or "andromeda"
 		else
 			for key,value in pairs(nextTheme or {}) do theme[key]=value end
 		end
@@ -636,8 +763,64 @@ function Andromeda:CreateWindow(config)
 			if textTheme and theme[textTheme] then pcall(function() object.TextColor3=theme[textTheme] end) end
 			if object:IsA("ScrollingFrame") then object.ScrollBarImageColor3=theme.Accent end
 		end
-		if self.AccentPicker and self.AccentPicker:Get()~=theme.Accent then self.AccentPicker:Set(theme.Accent,true) end
+		for key,picker in pairs(self.ThemePickers or {}) do
+			if theme[key] and picker:Get()~=theme[key] then picker:Set(theme[key],true) end
+		end
+		if type(nextTheme)=="string" or (type(nextTheme)=="table" and (nextTheme.BackgroundImage~=nil or nextTheme.BackgroundImageTransparency~=nil)) then
+			self:SetBackgroundImage(theme.BackgroundImage or "",{Transparency=theme.BackgroundImageTransparency})
+		end
 	end
+	function window:GetTheme()
+		return merge(theme)
+	end
+	function window:GetCustomThemes()
+		local names={}
+		for name in pairs(customThemeNames) do table.insert(names,name) end
+		table.sort(names);return names
+	end
+	function window:SaveCustomTheme(name,overwrite)
+		name=tostring(name or ""):match("^%s*(.-)%s*$")
+		if name=="" then return false,"enter a theme name" end
+		if builtInThemeNames[name] then return false,"built-in themes cannot be overwritten" end
+		if customThemeNames[name] and not overwrite then return false,"theme already exists" end
+		local previous=themeStore.themes[name]
+		themeStore.themes[name]=serializeTheme(theme)
+		local saved,err=saveThemeStore(themeFile,themeStore)
+		if not saved then themeStore.themes[name]=previous;return false,err end
+		customThemeNames[name]=true;Andromeda.Themes[name]=deserializeTheme(themeStore.themes[name]);return true
+	end
+	function window:DeleteCustomTheme(name)
+		name=tostring(name or "")
+		if not customThemeNames[name] then return false,"select a custom theme" end
+		local previous=themeStore.themes[name];local previousDefault=themeStore.default
+		themeStore.themes[name]=nil;if themeStore.default==name then themeStore.default=nil end
+		local saved,err=saveThemeStore(themeFile,themeStore)
+		if not saved then themeStore.themes[name]=previous;themeStore.default=previousDefault;return false,err end
+		customThemeNames[name]=nil;if not builtInThemeNames[name] then Andromeda.Themes[name]=nil end
+		if self.ThemeName==name then self:SetTheme("andromeda") end
+		return true
+	end
+	function window:SetDefaultTheme(name)
+		if name~=nil and not Andromeda.Themes[name] then return false,"select a valid theme" end
+		local previous=themeStore.default;themeStore.default=name
+		local saved,err=saveThemeStore(themeFile,themeStore)
+		if not saved then themeStore.default=previous;return false,err end
+		return true
+	end
+	function window:RefreshCustomThemes()
+		local fresh=loadThemeStore(themeFile)
+		for name in pairs(customThemeNames) do if not builtInThemeNames[name] then Andromeda.Themes[name]=nil end end
+		table.clear(customThemeNames);themeStore=fresh;self.ThemeStore=themeStore
+		for name,data in pairs(themeStore.themes) do
+			local decoded=deserializeTheme(data)
+			if decoded and not builtInThemeNames[name] then customThemeNames[name]=true;Andromeda.Themes[name]=decoded end
+		end
+		if self.ThemeName and not Andromeda.Themes[self.ThemeName] then self:SetTheme("andromeda") end
+		return self:GetCustomThemes()
+	end
+	window:SetBackgroundImage(config.BackgroundImage or theme.BackgroundImage or "",{
+		Transparency=config.BackgroundImageTransparency or theme.BackgroundImageTransparency,
+	})
 	function window:ClearKeybinds(includeLocked)
 		for _,bind in ipairs(keybinds) do if includeLocked or not bind.Locked then bind:SetKey(nil) end end
 	end
@@ -892,18 +1075,94 @@ function Andromeda:CreateWindow(config)
 		function api:CreateMultiDropdown(options) return dropdown(options,true) end
 
 		function api:CreateColorPicker(options)
-			options=options or {};local value=options.Color or options.CurrentColor or options.Default or Color3.new(1,1,1);local h,s,v=Color3.toHSV(value)
-			local object=row(options.Name or "Color picker",174);local name=textRole(label(object,options.Name or "Color picker",UDim2.new(1,-44,0,28),theme.Text),"Text");name.Position=UDim2.fromOffset(7,0);name.TextSize=13;fitSingleLine(name,9,13)
-			local preview=make("Frame",{Size=UDim2.fromOffset(20,20),Position=UDim2.new(1,-28,0,4),BackgroundColor3=value,BorderSizePixel=0,Parent=object});corner(preview,2);role(make("UIStroke",{Color=theme.Stroke,Parent=preview}),"Stroke","Color")
-			local control={Instance=object};local updating=false
-			local function changed() if updating then return end;value=Color3.fromHSV(h,s,v);preview.BackgroundColor3=value;if options.Flag then Andromeda.Flags[options.Flag]=value end;fire(options,value) end
-			local hue=api:CreateSlider({Name="Hue",Range={0,360},Increment=1,CurrentValue=h*360,Callback=function(x) h=x/360;changed() end});hue.Instance.Parent=object;hue.Instance.Position=UDim2.fromOffset(0,28);hue.Instance.Size=UDim2.new(1,0,0,44)
-			local sat=api:CreateSlider({Name="Saturation",Range={0,100},Increment=1,CurrentValue=s*100,Callback=function(x) s=x/100;changed() end});sat.Instance.Parent=object;sat.Instance.Position=UDim2.fromOffset(0,74);sat.Instance.Size=UDim2.new(1,0,0,44)
-			local bright=api:CreateSlider({Name="Brightness",Range={0,100},Increment=1,CurrentValue=v*100,Callback=function(x) v=x/100;changed() end});bright.Instance.Parent=object;bright.Instance.Position=UDim2.fromOffset(0,120);bright.Instance.Size=UDim2.new(1,0,0,44)
+			options=options or {}
+			local initial=options.Color or options.CurrentColor or options.Default or Color3.new(1,1,1)
+			local value=initial;local h,s,v=Color3.toHSV(value);local opened=false;local dragging
+			local object=row(options.Name or "Color picker",30);object.ClipsDescendants=true
+			local name=textRole(label(object,options.Name or "Color picker",UDim2.new(1,-44,0,30),theme.Text),"Text")
+			name.Position=UDim2.fromOffset(7,0);name.TextSize=13;fitSingleLine(name,9,13)
+			local preview=make("TextButton",{Size=UDim2.fromOffset(22,22),Position=UDim2.new(1,-29,0,4),BackgroundColor3=value,
+				BorderSizePixel=0,AutoButtonColor=false,Text="",Parent=object});corner(preview,3)
+			local previewStroke=role(make("UIStroke",{Color=theme.Stroke,Thickness=1,Parent=preview}),"Stroke","Color")
+			local picker=role(make("Frame",{Size=UDim2.new(1,-14,0,178),Position=UDim2.fromOffset(7,32),BackgroundColor3=theme.Panel,
+				BorderSizePixel=0,Visible=false,Parent=object}),"Panel");corner(picker,3);role(make("UIStroke",{Color=theme.Stroke,Parent=picker}),"Stroke","Color")
+
+			local sv=make("Frame",{Size=UDim2.new(1,-48,0,136),Position=UDim2.fromOffset(7,7),BackgroundColor3=Color3.fromHSV(h,1,1),
+				BorderSizePixel=0,Active=true,ClipsDescendants=true,Parent=picker});corner(sv,2)
+			local white=make("Frame",{Size=UDim2.fromScale(1,1),BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Parent=sv})
+			make("UIGradient",{Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(1,1)}),Parent=white})
+			local black=make("Frame",{Size=UDim2.fromScale(1,1),BackgroundColor3=Color3.new(0,0,0),BorderSizePixel=0,Parent=sv})
+			make("UIGradient",{Rotation=90,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1),NumberSequenceKeypoint.new(1,0)}),Parent=black})
+			local svCursor=make("Frame",{Size=UDim2.fromOffset(10,10),AnchorPoint=Vector2.new(.5,.5),BackgroundTransparency=1,ZIndex=4,Parent=sv})
+			corner(svCursor,6);make("UIStroke",{Color=Color3.new(1,1,1),Thickness=2,Parent=svCursor})
+
+			local hue=make("Frame",{Size=UDim2.fromOffset(18,136),Position=UDim2.new(1,-25,0,7),BackgroundColor3=Color3.new(1,1,1),
+				BorderSizePixel=0,Active=true,ClipsDescendants=false,Parent=picker});corner(hue,2)
+			make("UIGradient",{Rotation=90,Color=ColorSequence.new({
+				ColorSequenceKeypoint.new(0,Color3.fromRGB(255,0,0)),ColorSequenceKeypoint.new(1/6,Color3.fromRGB(255,255,0)),
+				ColorSequenceKeypoint.new(2/6,Color3.fromRGB(0,255,0)),ColorSequenceKeypoint.new(3/6,Color3.fromRGB(0,255,255)),
+				ColorSequenceKeypoint.new(4/6,Color3.fromRGB(0,0,255)),ColorSequenceKeypoint.new(5/6,Color3.fromRGB(255,0,255)),
+				ColorSequenceKeypoint.new(1,Color3.fromRGB(255,0,0)),
+			}),Parent=hue})
+			local hueCursor=make("Frame",{Size=UDim2.new(1,6,0,4),Position=UDim2.new(0,-3,h,0),AnchorPoint=Vector2.new(0,.5),
+				BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,ZIndex=4,Parent=hue});corner(hueCursor,2);make("UIStroke",{Color=Color3.new(0,0,0),Transparency=.25,Parent=hueCursor})
+
+			local function inputBox(size,position,text)
+				local box=textRole(role(make("TextBox",{Size=size,Position=position,BackgroundColor3=theme.Element,BorderSizePixel=0,
+					ClearTextOnFocus=false,Text=text,TextColor3=theme.Text,PlaceholderColor3=theme.Muted,TextSize=11,Font=Enum.Font.Code,
+					TextXAlignment=Enum.TextXAlignment.Center,Parent=picker}),"Element"),"Text")
+				corner(box,2);role(make("UIStroke",{Color=theme.Stroke,Transparency=.35,Parent=box}),"Stroke","Color");return box
+			end
+			local hexBox=inputBox(UDim2.new(.47,-9,0,24),UDim2.fromOffset(7,148),colorToHex(value))
+			local rgbBox=inputBox(UDim2.new(.53,-9,0,24),UDim2.new(.47,2,0,148),"")
+			local control={Instance=object}
+
+			local function refreshVisuals()
+				value=Color3.fromHSV(h,s,v);preview.BackgroundColor3=value;sv.BackgroundColor3=Color3.fromHSV(h,1,1)
+				svCursor.Position=UDim2.fromScale(s,1-v);hueCursor.Position=UDim2.new(0,-3,h,0)
+				hexBox.Text=colorToHex(value);rgbBox.Text=string.format("%d, %d, %d",math.floor(value.R*255+.5),math.floor(value.G*255+.5),math.floor(value.B*255+.5))
+			end
+			local function changed(silent)
+				refreshVisuals();if options.Flag then Andromeda.Flags[options.Flag]=value end;if not silent then fire(options,value) end
+			end
+			local function setOpen(nextValue)
+				opened=nextValue==true;picker.Visible=opened;object.Size=UDim2.new(1,0,0,opened and 214 or 30)
+			end
+			local function updateSV(position)
+				s=math.clamp((position.X-sv.AbsolutePosition.X)/math.max(sv.AbsoluteSize.X,1),0,1)
+				v=1-math.clamp((position.Y-sv.AbsolutePosition.Y)/math.max(sv.AbsoluteSize.Y,1),0,1);changed()
+			end
+			local function updateHue(position)
+				h=math.clamp((position.Y-hue.AbsolutePosition.Y)/math.max(hue.AbsoluteSize.Y,1),0,1);changed()
+			end
 			function control:Get() return value end
-			function control:Set(color,silent) value=color;h,s,v=Color3.toHSV(color);updating=true;hue:Set(h*360,true);sat:Set(s*100,true);bright:Set(v*100,true);updating=false;preview.BackgroundColor3=color;if options.Flag then Andromeda.Flags[options.Flag]=color end;if not silent then fire(options,color) end end
-			function control:Reset() control:Set(options.Color or options.CurrentColor or options.Default or Color3.new(1,1,1)) end
-			registerControl(api,object,options);return control
+			function control:Set(color,silent)
+				if typeof(color)~="Color3" then return end
+				value=color;h,s,v=Color3.toHSV(color);changed(silent==true)
+			end
+			function control:Reset() control:Set(initial) end
+			function control:SetOpen(nextValue) setOpen(nextValue) end
+			function control:IsOpen() return opened end
+
+			bindHover(preview,function() tween(previewStroke,{Color=theme.Accent},.12) end,function() tween(previewStroke,{Color=theme.Stroke},.12) end)
+			table.insert(connections,preview.MouseButton1Click:Connect(function() play(clickSound);setOpen(not opened) end))
+			table.insert(connections,sv.InputBegan:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging="sv";updateSV(input.Position) end end))
+			table.insert(connections,hue.InputBegan:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging="hue";updateHue(input.Position) end end))
+			table.insert(connections,UserInputService.InputChanged:Connect(function(input)
+				if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then
+					if dragging=="sv" then updateSV(input.Position) elseif dragging=="hue" then updateHue(input.Position) end
+				end
+			end))
+			table.insert(connections,UserInputService.InputEnded:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging=nil end end))
+			table.insert(connections,hexBox.FocusLost:Connect(function()
+				local color=hexToColor(hexBox.Text);if color then control:Set(color) else refreshVisuals() end
+			end))
+			table.insert(connections,rgbBox.FocusLost:Connect(function()
+				local red,green,blue=rgbBox.Text:match("(%d+)%D+(%d+)%D+(%d+)")
+				if red then control:Set(Color3.fromRGB(math.clamp(tonumber(red),0,255),math.clamp(tonumber(green),0,255),math.clamp(tonumber(blue),0,255))) else refreshVisuals() end
+			end))
+			refreshVisuals();if options.Flag then Andromeda.Flags[options.Flag]=value end
+			attachTooltip(object,options.Description or options.Tooltip);registerControl(api,object,options);return control
 		end
 
 		function api:CreateKeybind(options)
@@ -1050,9 +1309,69 @@ function Andromeda:CreateWindow(config)
 		menu:CreateButton({Name="Unload",Callback=function() window:Destroy() end})
 
 		local appearance=settingsTab:CreateSection({Name="Themes",Side="Left"})
-		local themeNames={} for name in pairs(Andromeda.Themes) do table.insert(themeNames,name) end table.sort(themeNames)
-		appearance:CreateDropdown({Name="Theme",Options=themeNames,CurrentOption=themeName,Callback=function(value) window:SetTheme(value) end})
-		window.AccentPicker=appearance:CreateColorPicker({Name="Accent color",Color=theme.Accent,Callback=function(value) window:SetTheme({Accent=value}) end})
+		local function allThemeNames() local names={} for name in pairs(Andromeda.Themes) do table.insert(names,name) end table.sort(names);return names end
+		local backgroundInput,backgroundTransparency,themeDropdown
+		themeDropdown=appearance:CreateDropdown({Name="Theme list",Options=allThemeNames(),CurrentOption=themeName,Callback=function(value)
+			window:SetTheme(value)
+			if backgroundInput then backgroundInput:Set(window.BackgroundImageSource or "") end
+			if backgroundTransparency then backgroundTransparency:Set((window.BackgroundImageTransparency or .18)*100,true) end
+		end})
+		appearance:CreateButton({Name="Set selected as default",Callback=function()
+			local selected=themeDropdown:Get();local ok,err=window:SetDefaultTheme(selected)
+			if window.DefaultThemeStatus then window.DefaultThemeStatus:Set("Current default theme: "..tostring(themeStore.default or "none")) end
+			window:Notify({Title="Themes",Content=ok and ("Default theme: "..tostring(selected)) or tostring(err)})
+		end})
+		local colorLabels={Background="Background color",Panel="Panel color",Element="Element color",Accent="Accent color",Text="Font color",Muted="Muted font color",Stroke="Outline color"}
+		for _,key in ipairs(themeColorKeys) do
+			local themeKey=key
+			local picker=appearance:CreateColorPicker({Name=colorLabels[key],Color=theme[key],Callback=function(value) window:SetTheme({[themeKey]=value}) end})
+			window.ThemePickers[key]=picker
+			if key=="Accent" then window.AccentPicker=picker end
+		end
+		backgroundInput=appearance:CreateInput({Name="Background image",PlaceholderText="Asset ID, URL, or local path",CurrentValue=window.BackgroundImageSource or "",Callback=function(value)
+			window:SetBackgroundImage(value,{Transparency=(backgroundTransparency and backgroundTransparency:Get() or 18)/100})
+		end})
+		backgroundTransparency=appearance:CreateSlider({Name="Image transparency",Range={0,100},Increment=1,CurrentValue=(window.BackgroundImageTransparency or .18)*100,Suffix="%",Callback=function(value)
+			window:SetBackgroundImage(backgroundInput:Get(),{Transparency=value/100})
+		end})
+
+		local customThemes=settingsTab:CreateSection({Name="Custom themes",Side="Right"})
+		local customName=customThemes:CreateInput({Name="Custom theme name",PlaceholderText="My theme"})
+		local customDropdown=customThemes:CreateDropdown({Name="Custom themes",Options=window:GetCustomThemes(),CurrentOption=window:GetCustomThemes()[1]})
+		local defaultStatus=customThemes:CreateLabel("Current default theme: "..tostring(themeStore.default or "none"))
+		window.DefaultThemeStatus=defaultStatus
+		local function refreshThemeControls(preferred)
+			local all=allThemeNames();themeDropdown:Refresh(all,false)
+			local active=table.find(all,preferred) and preferred or (table.find(all,window.ThemeName) and window.ThemeName or all[1])
+			if active then themeDropdown:Set(active,true) end
+			local custom=window:GetCustomThemes();customDropdown:Refresh(custom,false)
+			if preferred and table.find(custom,preferred) then customDropdown:Set(preferred,true) end
+			defaultStatus:Set("Current default theme: "..tostring(themeStore.default or "none"))
+		end
+		local function themeResult(ok,message)
+			window:Notify({Title="Themes",Content=ok and message or ("Could not update theme: "..tostring(message)),Duration=3})
+		end
+		customThemes:CreateButton({Name="Create theme",Callback=function()
+			local name=customName:Get();local ok,err=window:SaveCustomTheme(name,false);themeResult(ok,ok and ("Created "..name) or err);if ok then refreshThemeControls(name) end
+		end})
+		customThemes:CreateButton({Name="Load theme",Callback=function()
+			local name=customDropdown:Get();if not name or not customThemeNames[name] then themeResult(false,"select a custom theme") return end
+			window:SetTheme(name);themeDropdown:Set(name,true);backgroundInput:Set(window.BackgroundImageSource or "");backgroundTransparency:Set((window.BackgroundImageTransparency or .18)*100,true)
+			themeResult(true,"Loaded "..name)
+		end})
+		customThemes:CreateButton({Name="Overwrite theme",Callback=function()
+			local name=customDropdown:Get();local ok,err=window:SaveCustomTheme(name,true);themeResult(ok,ok and ("Overwrote "..tostring(name)) or err);if ok then refreshThemeControls(name) end
+		end})
+		customThemes:CreateButton({Name="Delete theme",Callback=function()
+			local name=customDropdown:Get();local ok,err=window:DeleteCustomTheme(name);themeResult(ok,ok and ("Deleted "..tostring(name)) or err);if ok then refreshThemeControls() end
+		end})
+		customThemes:CreateButton({Name="Refresh list",Callback=function() window:RefreshCustomThemes();refreshThemeControls();themeResult(true,"Theme list refreshed") end})
+		customThemes:CreateButton({Name="Set as default",Callback=function()
+			local name=customDropdown:Get();local ok,err=window:SetDefaultTheme(name);themeResult(ok,ok and ("Default theme: "..tostring(name)) or err);refreshThemeControls(name)
+		end})
+		customThemes:CreateButton({Name="Reset default",Callback=function()
+			local ok,err=window:SetDefaultTheme(nil);themeResult(ok,ok and "Default theme reset" or err);refreshThemeControls()
+		end})
 		local shadowSettings=settingsTab:CreateSection({Name="Shadow",Side="Right"})
 		shadowSettings:CreateToggle({Name="Shadow enabled",CurrentValue=shadow.Enabled,Callback=function(value) window:SetShadow(value) end})
 		shadowSettings:CreateColorPicker({Name="Shadow color",Color=shadow.Color,Callback=function(value) window:SetShadow({Color=value}) end})

@@ -17,9 +17,10 @@ local Andromeda = loadstring(game:HttpGet("https://raw.githubusercontent.com/7do
 - Multiple windows, tabs, and sections
 - Search bar for the selected tab
 - Buttons, toggles, sliders, dropdowns, and multi-dropdowns
-- Color pickers, inputs, labels, paragraphs, and keybinds
+- Saturation/value color pickers with hue, HEX, and RGB input
 - Built-in settings tab
-- Runtime theme switching
+- Runtime theme switching and saved custom themes
+- Background images from asset IDs, URLs, or executor files
 - Flags for storing control values
 - Notifications and tooltips
 - Interface sounds and scaling
@@ -87,8 +88,11 @@ local Window = Andromeda:CreateWindow({
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `Name` | string | `ANDROMEDA` | Main window title. `Title` can also be used. |
-| `ThemeName` | string | `andromeda` | Name of a built-in theme. |
+| `ThemeName` | string | saved default or `andromeda` | Name of a built-in or saved custom theme. |
 | `Theme` | table | nil | Theme values that override the selected built-in theme. |
+| `ThemeFile` | string | `andromedaLib/themes.json` | Executor-workspace file used for custom themes and the default theme. |
+| `BackgroundImage` | string or number | empty | Asset ID, image URI, HTTP URL, or executor-local image path. |
+| `BackgroundImageTransparency` | number | `0.18` | Background image transparency from `0` to `1`. |
 | `GuiName` | string | `andromedaLib` | Name assigned to the generated ScreenGui. |
 | `Size` | UDim2 | `UDim2.fromOffset(720, 600)` | Window size. |
 | `Position` | UDim2 | `UDim2.fromScale(0.5, 0.5)` | Initial window position. |
@@ -226,6 +230,38 @@ To change every open Andromeda window:
 ```lua
 Andromeda:SetTheme("aurora")
 ```
+
+### Background images
+
+```lua
+Window:SetBackgroundImage("rbxassetid://123456789", {
+	Transparency = 0.2,
+})
+
+Window:SetBackgroundImage("https://example.com/background.png")
+Window:SetBackgroundImage("") -- remove it
+```
+
+HTTP images are downloaded to `andromedaLib/backgrounds` and loaded through `getcustomasset` or `getsynasset`. Asset IDs work without executor file APIs.
+
+### Custom themes
+
+Custom themes can be managed from the built-in UI Settings tab or through the window API:
+
+```lua
+local ok, message = Window:SaveCustomTheme("My theme")
+Window:SaveCustomTheme("My theme", true) -- overwrite
+Window:SetTheme("My theme")
+Window:SetDefaultTheme("My theme")
+Window:SetDefaultTheme(nil) -- reset autoload
+Window:DeleteCustomTheme("My theme")
+Window:RefreshCustomThemes()
+
+print(Window:GetTheme())
+print(Window:GetCustomThemes())
+```
+
+Saved themes include all seven theme colors, the background image source, and image transparency. They are stored in `andromedaLib/themes.json` by default and automatically loaded by future windows.
 
 ### ClearKeybinds
 
@@ -533,7 +569,7 @@ MultiDropdown:Refresh({"Players", "World", "Camera"}, true)
 
 ## Color picker
 
-Color pickers expose hue, saturation, and brightness sliders.
+Color pickers use a compact color swatch. Clicking the swatch opens a saturation/brightness square, vertical hue spectrum, and editable HEX and RGB fields.
 
 ```lua
 local ColorPicker = Main:CreateColorPicker({
@@ -723,8 +759,13 @@ Every window always receives the built-in UI Settings tab:
   - Menu keybind, using K by default
   - Unload button
 - **Themes**
-  - Theme dropdown
-  - Accent color picker
+  - Built-in and custom theme list
+  - Default-theme button
+  - Background, panel, element, accent, font, muted-font, and outline color pickers
+  - Background image and transparency controls
+- **Custom themes**
+  - Create, load, overwrite, and delete saved themes
+  - Refresh, set default, and reset default controls
 - **Shadow**
   - Enabled toggle
   - Color picker
