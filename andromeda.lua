@@ -8,7 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 
 local Andromeda = {
-	Version = "2.1.0",
+	Version = "2.1.1",
 	Flags = {},
 	Windows = {},
 	CacheIcons = true,
@@ -955,6 +955,7 @@ function Andromeda:CreateWindow(config)
 
 		function api:CreateToggle(options)
 			options=options or {};local value=options.CurrentValue==true or options.Default==true;local object=row(options.Name or "Toggle",28)
+			local hasKeybind=options.KeybindEnabled==true or options.ShowKeybind==true or options.CurrentKeybind~=nil or options.Keybind~=nil
 			local name=textRole(label(object,options.Name or "Toggle",UDim2.new(1,-58,1,0),theme.Text),"Text");name.Position=UDim2.fromOffset(7,0);name.TextSize=13;fitSingleLine(name,9,13)
 			local track=role(make("Frame",{Size=UDim2.fromOffset(34,20),Position=UDim2.new(1,-41,.5,-10),BackgroundColor3=value and theme.Accent or theme.Stroke,BorderSizePixel=0,Parent=object}),value and "Accent" or "Stroke")
 			corner(track,10);local knob=make("Frame",{Size=UDim2.fromOffset(14,14),Position=value and UDim2.fromOffset(17,3) or UDim2.fromOffset(3,3),BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Parent=track});corner(knob,8)
@@ -965,11 +966,12 @@ function Andromeda:CreateWindow(config)
 				if options.Flag then Andromeda.Flags[options.Flag]=value end;if not silent then fire(options,value) end
 			end
 			function control:Get() return value end
-			local function toggle() play(clickSound);control:Set(not value) end
+			function control:Toggle(silent) if not silent then play(clickSound) end;control:Set(not value,silent) end
+			local function toggle() control:Toggle(false) end
 			local hit=make("TextButton",{Size=UDim2.new(1,-95,1,0),BackgroundTransparency=1,Text="",Parent=object});table.insert(connections,hit.MouseButton1Click:Connect(toggle))
 			local switchHit=make("TextButton",{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text="",ZIndex=2,Parent=track});table.insert(connections,switchHit.MouseButton1Click:Connect(toggle))
 			bindHover(object,function() tween(name,{TextColor3=theme.Accent},.12) end,function() tween(name,{TextColor3=theme.Text},.12) end)
-			if options.CurrentKeybind or options.Keybind then local bind=addKeybind(object,toggle,options);control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end;track.Position=UDim2.new(1,-94,.5,-10);hit.Size=UDim2.new(1,-102,1,0);name.Size=UDim2.new(1,-108,1,0) end
+			if hasKeybind then local bind=addKeybind(object,toggle,options);control.Keybind=bind;control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end;track.Position=UDim2.new(1,-94,.5,-10);hit.Size=UDim2.new(1,-102,1,0);name.Size=UDim2.new(1,-108,1,0) end
 			if options.Flag then Andromeda.Flags[options.Flag]=value end;attachTooltip(object,options.Description or options.Tooltip);registerControl(api,object,options);return control
 		end
 
@@ -977,10 +979,10 @@ function Andromeda:CreateWindow(config)
 			options=options or {};local range=options.Range or {options.Min or 0,options.Max or 100};local minimum,maximum=range[1] or 0,range[2] or 100
 			local increment=options.Increment or options.Step or 1;local initialValue=math.clamp(tonumber(options.CurrentValue or options.Default) or minimum,minimum,maximum);local value=initialValue
 			local object=row(options.Name or "Slider",50)
-			local name=textRole(label(object,options.Name or "Slider",UDim2.new(.5,-4,0,24),theme.Text),"Text");name.Position=UDim2.fromOffset(7,0);name.TextSize=13;fitSingleLine(name,9,13)
-			local valueLabel=textRole(label(object,"",UDim2.new(.5,-35,0,24),theme.Text),"Text");valueLabel.Position=UDim2.new(.5,0,0,0);valueLabel.TextXAlignment=Enum.TextXAlignment.Right;valueLabel.TextSize=12;fitSingleLine(valueLabel,8,12)
-			local bar=role(make("Frame",{Size=UDim2.new(1,-14,0,14),Position=UDim2.fromOffset(7,27),BackgroundColor3=theme.Element,BorderSizePixel=0,Active=true,Parent=object}),"Element");corner(bar,2)
-			local fill=role(make("Frame",{Size=UDim2.new(0,0,1,0),BackgroundColor3=theme.Accent,BorderSizePixel=0,Parent=bar}),"Accent");corner(fill,2)
+			local name=textRole(label(object,options.Name or "Slider",UDim2.new(1,-38,0,24),theme.Text),"Text");name.Position=UDim2.fromOffset(7,0);name.TextSize=13;fitSingleLine(name,9,13)
+			local bar=role(make("Frame",{Size=UDim2.new(1,-14,0,16),Position=UDim2.fromOffset(7,27),BackgroundColor3=theme.Element,BorderSizePixel=0,Active=true,ClipsDescendants=true,Parent=object}),"Element");corner(bar,2)
+			local fill=role(make("Frame",{Size=UDim2.new(0,0,1,0),BackgroundColor3=theme.Accent,BorderSizePixel=0,ZIndex=1,Parent=bar}),"Accent");corner(fill,2)
+			local valueLabel=textRole(label(bar,"",UDim2.fromScale(1,1),theme.Text),"Text");valueLabel.TextXAlignment=Enum.TextXAlignment.Center;valueLabel.TextSize=11;valueLabel.TextStrokeColor3=Color3.new(0,0,0);valueLabel.TextStrokeTransparency=.55;valueLabel.ZIndex=3;fitSingleLine(valueLabel,8,11)
 			local control={Instance=object}
 			local function snap(number) return math.clamp(math.floor(number/increment+.5)*increment,minimum,maximum) end
 			function control:Set(nextValue,silent)

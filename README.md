@@ -334,6 +334,7 @@ Most interactive controls support these options:
 | `Flag` | Key used to store the control value in `Andromeda.Flags`. |
 | `Notification` | Notification shown automatically after the callback. `Notify` is an alias. |
 | `CurrentKeybind` | Optional Enum.KeyCode or key name string. `Keybind` is an alias. |
+| `KeybindEnabled` | Shows an empty, bindable key slot when no initial key is supplied. Supported by toggles. `ShowKeybind` is an alias. |
 | `LockKeybind` | Prevents the keybind from being cleared by the user or `ClearKeybinds(false)`. |
 | `Rebindable` | When used with a locked keybind, allows changing its key without allowing it to be cleared. |
 
@@ -440,11 +441,15 @@ local Toggle = Main:CreateToggle({
 
 `Default` can be used instead of `CurrentValue`.
 
+To let the user choose a key without assigning a default key, use `KeybindEnabled = true`. Clicking the compact key button starts listening for a new key; right-clicking it clears an unlocked bind.
+
 ### Toggle controller
 
 ```lua
 Toggle:Set(true)
 Toggle:Set(false, true) -- silent: update without calling the callback
+Toggle:Toggle()
+Toggle:Toggle(true) -- silent
 
 print(Toggle:Get())
 
@@ -455,7 +460,7 @@ Toggle:ClearKey()
 
 ## Slider
 
-Sliders select a number within a range. Their value text uses `current / maximum`, and every slider includes a reset button by default.
+Sliders select a number within a range. Their centered bar text uses `current / maximum`, and every slider includes a reset button by default.
 
 ```lua
 local Slider = Main:CreateSlider({
