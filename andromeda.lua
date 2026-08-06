@@ -8,7 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 
 local Andromeda = {
-	Version = "2.1.1",
+	Version = "2.1.2",
 	Flags = {},
 	Windows = {},
 	CacheIcons = true,
@@ -865,11 +865,11 @@ function Andromeda:CreateWindow(config)
 		if input.UserInputType==Enum.UserInputType.MouseButton1 then resizing=false end
 	end))
 
-	local function addKeybind(parent,handler,options)
+	local function addKeybind(parent,handler,options,position)
 		local bind={Key=toKeyCode(options.CurrentKeybind or options.Keybind),Locked=options.LockKeybind==true,
 			Rebindable=options.Rebindable==true or options.LockKeybind~=true,AllowProcessed=options.AllowProcessed==true}
 		local button=textRole(role(make("TextButton",{
-			Name="KeybindButton",Size=UDim2.fromOffset(46,20),Position=UDim2.new(1,-52,.5,-10),BackgroundColor3=theme.Panel,
+			Name="KeybindButton",Size=UDim2.fromOffset(46,20),Position=position or UDim2.new(1,-52,.5,-10),BackgroundColor3=theme.Panel,
 			BorderSizePixel=0,AutoButtonColor=false,Text=bind.Key and bind.Key.Name or "...",TextColor3=theme.Text,
 			TextSize=11,Font=Enum.Font.Code,ZIndex=4,Parent=parent,
 		}),"Panel"),"Text")
@@ -934,7 +934,7 @@ function Andromeda:CreateWindow(config)
 		end
 
 		function api:CreateButton(options)
-			options=options or {};local object=row(options.Name or "Button",34);local hasKeybind=options.CurrentKeybind~=nil or options.Keybind~=nil
+			options=options or {};local object=row(options.Name or "Button",34);local hasKeybind=(options.KeybindEnabled~=false and options.ShowKeybind~=false) or options.CurrentKeybind~=nil or options.Keybind~=nil
 			local hovering=false
 			local button=textRole(role(make("TextButton",{
 				Size=UDim2.new(1,hasKeybind and -64 or -12,0,26),Position=UDim2.fromOffset(6,4),BackgroundColor3=theme.Element,BorderSizePixel=0,
@@ -955,7 +955,7 @@ function Andromeda:CreateWindow(config)
 
 		function api:CreateToggle(options)
 			options=options or {};local value=options.CurrentValue==true or options.Default==true;local object=row(options.Name or "Toggle",28)
-			local hasKeybind=options.KeybindEnabled==true or options.ShowKeybind==true or options.CurrentKeybind~=nil or options.Keybind~=nil
+			local hasKeybind=(options.KeybindEnabled~=false and options.ShowKeybind~=false) or options.CurrentKeybind~=nil or options.Keybind~=nil
 			local name=textRole(label(object,options.Name or "Toggle",UDim2.new(1,-58,1,0),theme.Text),"Text");name.Position=UDim2.fromOffset(7,0);name.TextSize=13;fitSingleLine(name,9,13)
 			local track=role(make("Frame",{Size=UDim2.fromOffset(34,20),Position=UDim2.new(1,-41,.5,-10),BackgroundColor3=value and theme.Accent or theme.Stroke,BorderSizePixel=0,Parent=object}),value and "Accent" or "Stroke")
 			corner(track,10);local knob=make("Frame",{Size=UDim2.fromOffset(14,14),Position=value and UDim2.fromOffset(17,3) or UDim2.fromOffset(3,3),BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Parent=track});corner(knob,8)
@@ -971,7 +971,7 @@ function Andromeda:CreateWindow(config)
 			local hit=make("TextButton",{Size=UDim2.new(1,-95,1,0),BackgroundTransparency=1,Text="",Parent=object});table.insert(connections,hit.MouseButton1Click:Connect(toggle))
 			local switchHit=make("TextButton",{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text="",ZIndex=2,Parent=track});table.insert(connections,switchHit.MouseButton1Click:Connect(toggle))
 			bindHover(object,function() tween(name,{TextColor3=theme.Accent},.12) end,function() tween(name,{TextColor3=theme.Text},.12) end)
-			if hasKeybind then local bind=addKeybind(object,toggle,options);control.Keybind=bind;control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end;track.Position=UDim2.new(1,-94,.5,-10);hit.Size=UDim2.new(1,-102,1,0);name.Size=UDim2.new(1,-108,1,0) end
+			if hasKeybind then local bind=addKeybind(object,toggle,options,UDim2.new(1,-94,.5,-10));control.Keybind=bind;control.SetKey=function(_,v) bind:SetKey(v) end;control.GetKey=function() return bind:GetKey() end;control.ClearKey=function() bind:ClearKey() end;hit.Size=UDim2.new(1,-102,1,0);name.Size=UDim2.new(1,-108,1,0) end
 			if options.Flag then Andromeda.Flags[options.Flag]=value end;attachTooltip(object,options.Description or options.Tooltip);registerControl(api,object,options);return control
 		end
 

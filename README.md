@@ -334,7 +334,7 @@ Most interactive controls support these options:
 | `Flag` | Key used to store the control value in `Andromeda.Flags`. |
 | `Notification` | Notification shown automatically after the callback. `Notify` is an alias. |
 | `CurrentKeybind` | Optional Enum.KeyCode or key name string. `Keybind` is an alias. |
-| `KeybindEnabled` | Shows an empty, bindable key slot when no initial key is supplied. Supported by toggles. `ShowKeybind` is an alias. |
+| `KeybindEnabled` | Buttons and toggles show a bindable key slot by default. Set this to `false` to hide it. `ShowKeybind` is an alias. |
 | `LockKeybind` | Prevents the keybind from being cleared by the user or `ClearKeybinds(false)`. |
 | `Rebindable` | When used with a locked keybind, allows changing its key without allowing it to be cleared. |
 
@@ -441,7 +441,7 @@ local Toggle = Main:CreateToggle({
 
 `Default` can be used instead of `CurrentValue`.
 
-To let the user choose a key without assigning a default key, use `KeybindEnabled = true`. Clicking the compact key button starts listening for a new key; right-clicking it clears an unlocked bind.
+Buttons and toggles show an empty keybind slot by default. Clicking the compact key button starts listening for a new key; right-clicking it clears an unlocked bind. Use `KeybindEnabled = false` when a control should not expose a keybind.
 
 ### Toggle controller
 
