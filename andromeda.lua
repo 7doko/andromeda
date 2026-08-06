@@ -161,7 +161,7 @@ local function executorEnvironment()
 	local environment
 	if type(getgenv)=="function" then
 		local ok,result=pcall(getgenv)
-		if ok and type(result)=="table" then environment=result end
+		if ok and type(result)=="le" then environment=result end
 	end
 	return environment or _G
 end
@@ -1191,7 +1191,7 @@ function Andromeda:CreateWindow(config)
 		else
 				iconHolder=textRole(label(button,tabConfig.IconText or string.upper(string.sub(tab.Name,1,1)),UDim2.fromOffset(30,40),theme.Accent),"Accent");iconHolder.Position=UDim2.fromOffset(5,0);iconHolder.TextXAlignment=Enum.TextXAlignment.Center;iconHolder.TextSize=14
 		end
-		local buttonText=textRole(label(button,tab.Name,UDim2.new(1,-48,1,0),theme.Muted),"Muted");buttonText.Position=UDim2.fromOffset(42,0);buttonText.TextSize=14;fitSingleLine(buttonText,9,14)
+		local buttonText=textRole(label(button,tab.Name,UDim2.new(1,-48,1,0),theme.Muted),"Muted");buttonText.Position=UDim2.fromOffset(42,0);buttonText.TextSize=18;fitSingleLine(buttonText,9,14)
 		tab.Button=button;tab.ButtonText=buttonText
 
 		local page=make("Frame",{
